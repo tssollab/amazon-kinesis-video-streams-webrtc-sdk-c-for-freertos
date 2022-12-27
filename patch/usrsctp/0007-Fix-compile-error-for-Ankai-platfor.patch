@@ -1,0 +1,186 @@
+From d71ad0b26e908141ebcc274b912bead05c732be6 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Tue, 27 Dec 2022 07:06:49 +0000
+Subject: [PATCH 7/7] Fix compile error for Ankai platfor
+
+---
+ CMakeLists.txt                         |  2 ++
+ usrsctplib/netinet/sctp.h              |  7 ++++
+ usrsctplib/netinet/sctp_os_userspace.h |  4 +--
+ usrsctplib/netinet/sctp_userspace.c    | 50 --------------------------
+ usrsctplib/user_malloc.h               |  7 ++++
+ usrsctplib/user_recv_thread.c          |  2 +-
+ usrsctplib/user_socketvar.h            |  2 +-
+ 7 files changed, 20 insertions(+), 54 deletions(-)
+ mode change 100644 => 100755 CMakeLists.txt
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+old mode 100644
+new mode 100755
+index f04b944..4f757dd
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -45,6 +45,8 @@ include(CheckIncludeFile)
+ include(CheckIncludeFiles)
+ include(CheckCCompilerFlag)
+ 
++include_directories(${MBEDTLS_INCLUDE_DIRS})
++
+ #################################################
+ # CHECK OPTIONS
+ #################################################
+diff --git a/usrsctplib/netinet/sctp.h b/usrsctplib/netinet/sctp.h
+index 8d8bf31..b6e81b2 100755
+--- a/usrsctplib/netinet/sctp.h
++++ b/usrsctplib/netinet/sctp.h
+@@ -54,6 +54,13 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp.h 356357 2020-01-04 20:33:12Z tuexen $
+ #define SCTP_PACKED
+ #endif
+ 
++#if defined(SCTP_USE_RTOS)
++#define SOCK_SEQPACKET 5
++#define MSG_EOR        0x08
++#define SOMAXCONN      128
++#define ENOTSUP        134
++#endif
++
+ /*
+  * SCTP protocol - RFC4960.
+  */
+diff --git a/usrsctplib/netinet/sctp_os_userspace.h b/usrsctplib/netinet/sctp_os_userspace.h
+index b2a09e1..54ed5f9 100755
+--- a/usrsctplib/netinet/sctp_os_userspace.h
++++ b/usrsctplib/netinet/sctp_os_userspace.h
+@@ -288,7 +288,7 @@ typedef char* caddr_t;
+ 
+ #else /* !defined(Userspace_os_Windows) */
+ #include <sys/socket.h>
+-#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__native_client__) || defined(__Fuchsia__)
++#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__native_client__) || defined(__Fuchsia__) || defined(SCTP_USE_RTOS)
+ #include <pthread.h>
+ #endif
+ 
+@@ -1145,7 +1145,7 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header, int how, int a
+ #define LIST_FOREACH_SAFE LIST_FOREACH_MUTABLE
+ #endif
+ 
+-#if defined(__native_client__)
++#if defined(__native_client__) || defined(SCTP_USE_RTOS)
+ #define	timercmp(tvp, uvp, cmp)						\
+ 	(((tvp)->tv_sec == (uvp)->tv_sec) ?				\
+ 	    ((tvp)->tv_usec cmp (uvp)->tv_usec) :			\
+diff --git a/usrsctplib/netinet/sctp_userspace.c b/usrsctplib/netinet/sctp_userspace.c
+index 2b4a533..8a37787 100755
+--- a/usrsctplib/netinet/sctp_userspace.c
++++ b/usrsctplib/netinet/sctp_userspace.c
+@@ -39,7 +39,6 @@
+ 
+ #if defined(SCTP_USE_RTOS)
+ #include <netinet/sctp_pcb.h>
+-#include "esp_pthread.h"
+ #endif
+ #include <netinet/sctp_os_userspace.h>
+ #if defined(__FreeBSD__)
+@@ -80,55 +79,6 @@ sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_ro
+ #pragma GCC diagnostic pop
+ #endif
+ 
+-#elif defined(SCTP_USE_RTOS)
+-#include "esp_pthread.h"
+-
+-int
+-sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine, const char* thread_name, uint32_t thread_size)
+-{
+-    esp_pthread_cfg_t pthread_cfg;
+-    esp_err_t esp_err = esp_pthread_get_cfg(&pthread_cfg);
+-    pthread_attr_t *pAttr = NULL;
+-    pthread_attr_t attr;
+-    pAttr = &attr;
+-	int result = 0;
+-
+-    result = pthread_attr_init(pAttr);
+-	extern struct sctp_base_info system_base_info;
+-    if(esp_err != ESP_OK){
+-        SCTPDBG(SCTP_DEBUG_USR, "get the esp pthread cfg failed.\n");
+-		//SCTP_PRINTF("get the esp pthread cfg failed.\n");
+-		return esp_err;
+-    }
+-
+-    if(thread_size == 0){
+-        pthread_cfg.stack_size = SCTP_THREAD_DEFAULT_SIZE;
+-    }else{
+-        pthread_cfg.stack_size = thread_size;
+-    }
+-
+-    if(thread_name == NULL){
+-        pthread_cfg.thread_name = SCTP_THREAD_DEFAULT_NAME;
+-    }else{
+-        pthread_cfg.thread_name = thread_name;
+-    }
+-
+-    esp_err = esp_pthread_set_cfg(&pthread_cfg);
+-
+-    if(esp_err != ESP_OK){
+-		SCTPDBG(SCTP_DEBUG_USR, "set the esp pthread cfg failed.\n");
+-		//SCTP_PRINTF("set the esp pthread cfg failed.\n");
+-		return esp_err;
+-    }
+-
+-    if(thread_size == 0){
+-        pthread_attr_setstacksize(pAttr, SCTP_THREAD_DEFAULT_SIZE);
+-    }else{
+-        pthread_attr_setstacksize(pAttr, thread_size);
+-    }
+-
+-	return pthread_create(thread, pAttr, start_routine, NULL);
+-}
+ #else
+ int
+ sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine, const char* thread_name, uint32_t thread_size)
+diff --git a/usrsctplib/user_malloc.h b/usrsctplib/user_malloc.h
+index 1612452..830be36 100755
+--- a/usrsctplib/user_malloc.h
++++ b/usrsctplib/user_malloc.h
+@@ -54,6 +54,13 @@
+ 
+ #define	MINALLOCSIZE	UMA_SMALLEST_UNIT
+ 
++#ifdef SCTP_USE_RTOS
++typedef unsigned char   u_char;
++typedef unsigned short  u_short;
++typedef unsigned int    u_int;
++typedef unsigned long   u_long;
++#endif
++
+ /*
+  * flags to malloc.
+  */
+diff --git a/usrsctplib/user_recv_thread.c b/usrsctplib/user_recv_thread.c
+index 1a72948..02ff058 100755
+--- a/usrsctplib/user_recv_thread.c
++++ b/usrsctplib/user_recv_thread.c
+@@ -35,7 +35,7 @@
+ #include <netinet/in.h>
+ #include <unistd.h>
+ #include <pthread.h>
+-#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
++#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(SCTP_USE_RTOS)
+ #include <sys/uio.h>
+ #else
+ #include <user_ip6_var.h>
+diff --git a/usrsctplib/user_socketvar.h b/usrsctplib/user_socketvar.h
+index 6b79b59..96bccbf 100755
+--- a/usrsctplib/user_socketvar.h
++++ b/usrsctplib/user_socketvar.h
+@@ -42,7 +42,7 @@
+ /* #include <sys/_lock.h>  was 0 byte file */
+ /* #include <sys/_mutex.h> was 0 byte file */
+ /* #include <sys/_sx.h> */ /*__Userspace__ alternative?*/
+-#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(_WIN32) && !defined(__native_client__)
++#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(_WIN32) && !defined(__native_client__) && !defined(SCTP_USE_RTOS)
+ #include <sys/uio.h>
+ #endif
+ #define SOCK_MAXADDRLEN 255
+-- 
+2.17.1
+

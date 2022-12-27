@@ -1,0 +1,527 @@
+From 0041995228c7c3e941dfa327613a0a58ce6a8e75 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Tue, 27 Dec 2022 07:10:52 +0000
+Subject: [PATCH] Fix compile error for Ankai platform
+
+---
+ CMakeLists.txt                   | 16 ++++-----
+ src/include/kvs/common.h         |  2 +-
+ src/source/api_call/list.h       |  2 ++
+ src/source/api_call/netio.c      | 28 +++++++++++++--
+ src/source/crypto/crypto.h       |  4 +--
+ src/source/crypto/dtls_mbedtls.c | 62 ++++++++++++++++++++++----------
+ src/source/crypto/tls_mbedtls.c  |  2 +-
+ src/source/net/network.c         |  2 +-
+ src/source/signaling/signaling.h |  3 ++
+ src/source/srtp/srtp_session.h   |  2 +-
+ src/source/utils/mutex.h         |  5 ---
+ src/source/utils/thread.c        | 49 -------------------------
+ src/source/utils/thread.h        |  5 ---
+ 13 files changed, 87 insertions(+), 95 deletions(-)
+ mode change 100644 => 100755 CMakeLists.txt
+ mode change 100644 => 100755 src/include/kvs/common.h
+ mode change 100644 => 100755 src/source/api_call/list.h
+ mode change 100644 => 100755 src/source/api_call/netio.c
+ mode change 100644 => 100755 src/source/crypto/crypto.h
+ mode change 100644 => 100755 src/source/crypto/dtls_mbedtls.c
+ mode change 100644 => 100755 src/source/crypto/tls_mbedtls.c
+ mode change 100644 => 100755 src/source/net/network.c
+ mode change 100644 => 100755 src/source/signaling/signaling.h
+ mode change 100644 => 100755 src/source/srtp/srtp_session.h
+ mode change 100644 => 100755 src/source/utils/mutex.h
+ mode change 100644 => 100755 src/source/utils/thread.c
+ mode change 100644 => 100755 src/source/utils/thread.h
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+old mode 100644
+new mode 100755
+index 2846610e6..9bba35608
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -29,10 +29,10 @@ option(MEMORY_SANITIZER "Build with MemorySanitizer." OFF)
+ option(THREAD_SANITIZER "Build with ThreadSanitizer." OFF)
+ option(UNDEFINED_BEHAVIOR_SANITIZER "Build with UndefinedBehaviorSanitizer." OFF)
+ 
+-option(KVS_PLAT_ESP_FREERTOS "Build for ESP FreeRTOS" OFF)
++option(KVS_PLAT_ANKAI_FREERTOS "Build for ANKAI FreeRTOS" OFF)
+ 
+-if(KVS_PLAT_ESP_FREERTOS)
+-  add_definitions(-DKVS_PLAT_ESP_FREERTOS)
++if(KVS_PLAT_ANKAI_FREERTOS)
++  add_definitions(-DKVS_PLAT_ANKAI_FREERTOS)
+ endif()
+ 
+ if(NOT WIN32)
+@@ -154,13 +154,13 @@ if (USE_OPENSSL)
+   find_package(OpenSSL REQUIRED)
+   set(OPEN_SRC_INCLUDE_DIRS ${OPEN_SRC_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR})
+ else()
+-  if(NOT KVS_PLAT_ESP_FREERTOS)
++  if(NOT KVS_PLAT_ANKAI_FREERTOS)
+     find_package(MbedTLS REQUIRED)
+     set(OPEN_SRC_INCLUDE_DIRS ${OPEN_SRC_INCLUDE_DIRS} ${MBEDTLS_INCLUDE_DIRS})
+   endif()
+ endif()
+ 
+-if (ENABLE_STREAMING AND NOT KVS_PLAT_ESP_FREERTOS)
++if (ENABLE_STREAMING AND NOT KVS_PLAT_ANKAI_FREERTOS)
+   if (OPEN_SRC_INSTALL_PREFIX)
+     find_library(LLHTTP_LIBRARIES llhttp REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
+   else()
+@@ -168,7 +168,7 @@ if (ENABLE_STREAMING AND NOT KVS_PLAT_ESP_FREERTOS)
+   endif()
+ endif()
+ 
+-if (ENABLE_STREAMING AND NOT KVS_PLAT_ESP_FREERTOS)
++if (ENABLE_STREAMING AND NOT KVS_PLAT_ANKAI_FREERTOS)
+   if (OPEN_SRC_INSTALL_PREFIX)
+     find_library(WSLAY_LIBRARIES wslay REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
+   else()
+@@ -176,7 +176,7 @@ if (ENABLE_STREAMING AND NOT KVS_PLAT_ESP_FREERTOS)
+   endif()
+ endif()
+ 
+-if (ENABLE_STREAMING AND NOT KVS_PLAT_ESP_FREERTOS)
++if (ENABLE_STREAMING AND NOT KVS_PLAT_ANKAI_FREERTOS)
+   if (OPEN_SRC_INSTALL_PREFIX)
+     find_library(SRTP_LIBRARIES srtp2 REQUIRED PATHS ${OPEN_SRC_INSTALL_PREFIX})
+   else()
+@@ -186,7 +186,7 @@ endif()
+ 
+ if(ENABLE_DATA_CHANNEL)
+   # usrsctp dont support pkgconfig yet
+-  if(NOT KVS_PLAT_ESP_FREERTOS)
++  if(NOT KVS_PLAT_ANKAI_FREERTOS)
+     find_library(
+       Usrsctp
+       NAMES ${USRSCTP_LIBNAME} usrsctp REQUIRED
+diff --git a/src/include/kvs/common.h b/src/include/kvs/common.h
+old mode 100644
+new mode 100755
+index f524c1ddb..7aeae3cb8
+--- a/src/include/kvs/common.h
++++ b/src/include/kvs/common.h
+@@ -201,7 +201,7 @@ extern "C" {
+ #ifdef CMAKE_DETECTED_CACERT_PATH
+ #define DEFAULT_KVS_CACERT_PATH KVS_CA_CERT_PATH
+ #else
+-#ifdef KVS_PLAT_ESP_FREERTOS
++#ifdef KVS_PLAT_ANKAI_FREERTOS
+ #define DEFAULT_KVS_CACERT_PATH "/sdcard/cert.pem"
+ #else
+ #define DEFAULT_KVS_CACERT_PATH EMPTY_STRING
+diff --git a/src/source/api_call/list.h b/src/source/api_call/list.h
+old mode 100644
+new mode 100755
+index bd3e9f818..784e15fa4
+--- a/src/source/api_call/list.h
++++ b/src/source/api_call/list.h
+@@ -19,6 +19,8 @@
+ #define _LINUX_LIST_H
+ 
+ #include <stdio.h>
++
++#define typeof(x) __typeof__(x)
+ /**
+  * @name from other kernel headers
+  */
+diff --git a/src/source/api_call/netio.c b/src/source/api_call/netio.c
+old mode 100644
+new mode 100755
+index 9ccae2b6a..09c11f85e
+--- a/src/source/api_call/netio.c
++++ b/src/source/api_call/netio.c
+@@ -26,7 +26,7 @@
+ //#include "azure_c_shared_utility/xlogging.h"
+ #include "mbedtls/ctr_drbg.h"
+ #include "mbedtls/entropy.h"
+-#include "mbedtls/net.h"
++// #include "mbedtls/net.h"
+ #include "mbedtls/net_sockets.h"
+ 
+ /* Public headers */
+@@ -78,6 +78,28 @@ static int prvCreateX509Cert(NetIo_t* pxNet)
+     return xRes;
+ }
+ 
++static int mbedtls_test_rnd_std_rand( void *rng_state,
++                                      unsigned char *output,
++                                      size_t len )
++{
++#if !defined(__OpenBSD__) && !defined(__NetBSD__)
++    size_t i;
++
++    if( rng_state != NULL )
++        rng_state  = NULL;
++
++    for( i = 0; i < len; ++i )
++        output[i] = rand();
++#else
++    if( rng_state != NULL )
++        rng_state = NULL;
++
++    arc4random_buf( output, len );
++#endif /* !OpenBSD && !NetBSD */
++
++    return( 0 );
++}
++
+ static int prvInitConfig(NetIo_t* pxNet, const char* pcRootCA, const char* pcCert, const char* pcPrivKey, bool bFilePath)
+ {
+     int xRes = STATUS_SUCCESS;
+@@ -98,12 +120,12 @@ static int prvInitConfig(NetIo_t* pxNet, const char* pcRootCA, const char* pcCer
+                 if (bFilePath == false &&
+                     (mbedtls_x509_crt_parse(pxNet->pRootCA, (void*) pcRootCA, strlen(pcRootCA) + 1) != 0 ||
+                      mbedtls_x509_crt_parse(pxNet->pCert, (void*) pcCert, strlen(pcCert) + 1) != 0 ||
+-                     mbedtls_pk_parse_key(pxNet->pPrivKey, (void*) pcPrivKey, strlen(pcPrivKey) + 1, NULL, 0) != 0)) {
++                     mbedtls_pk_parse_key(pxNet->pPrivKey, (void*) pcPrivKey, strlen(pcPrivKey) + 1, NULL, 0, mbedtls_test_rnd_std_rand, NULL) != 0)) {
+                     DLOGE("Failed to parse x509");
+                     xRes = STATUS_NULL_ARG;
+                 } else if (mbedtls_x509_crt_parse_file(pxNet->pRootCA, (void*) pcRootCA) != 0 ||
+                            mbedtls_x509_crt_parse_file(pxNet->pCert, (void*) pcCert) != 0 ||
+-                           mbedtls_pk_parse_keyfile(pxNet->pPrivKey, (void*) pcPrivKey, NULL) != 0) {
++                           mbedtls_pk_parse_keyfile(pxNet->pPrivKey, (void*) pcPrivKey, NULL, mbedtls_test_rnd_std_rand, NULL) != 0) {
+                 } else {
+                     mbedtls_ssl_conf_authmode(&(pxNet->xConf), MBEDTLS_SSL_VERIFY_REQUIRED);
+                     mbedtls_ssl_conf_ca_chain(&(pxNet->xConf), pxNet->pRootCA, NULL);
+diff --git a/src/source/crypto/crypto.h b/src/source/crypto/crypto.h
+old mode 100644
+new mode 100755
+index e73df839c..f8168e6ad
+--- a/src/source/crypto/crypto.h
++++ b/src/source/crypto/crypto.h
+@@ -87,8 +87,8 @@ typedef enum {
+     } while (0)
+ 
+ typedef enum {
+-    KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_80 = MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_80,
+-    KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_32 = MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_32,
++    KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_80 = MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_80,
++    KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_32 = MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_32,
+ } KVS_SRTP_PROFILE;
+ #else
+ #error "A Crypto implementation is required."
+diff --git a/src/source/crypto/dtls_mbedtls.c b/src/source/crypto/dtls_mbedtls.c
+old mode 100644
+new mode 100755
+index 8b1be55f5..e9d137a49
+--- a/src/source/crypto/dtls_mbedtls.c
++++ b/src/source/crypto/dtls_mbedtls.c
+@@ -6,8 +6,9 @@
+ 
+ /**  https://tools.ietf.org/html/rfc5764#section-4.1.2 */
+ mbedtls_ssl_srtp_profile DTLS_SRTP_SUPPORTED_PROFILES[] = {
+-    MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_80,
+-    MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_32,
++    MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_80,
++    MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_32,
++    MBEDTLS_TLS_SRTP_UNSET,
+ };
+ 
+ STATUS dtls_session_create(PDtlsSessionCallbacks pDtlsSessionCallbacks, TIMER_QUEUE_HANDLE timerQueueHandle, INT32 certificateBits,
+@@ -30,6 +31,7 @@ STATUS dtls_session_create(PDtlsSessionCallbacks pDtlsSessionCallbacks, TIMER_QU
+     mbedtls_ctr_drbg_init(&pDtlsSession->ctrDrbg);
+     mbedtls_ssl_config_init(&pDtlsSession->sslCtxConfig);
+     mbedtls_ssl_init(&pDtlsSession->sslCtx);
++    mbedtls_ctr_drbg_set_prediction_resistance(&pDtlsSession->ctrDrbg, MBEDTLS_CTR_DRBG_PR_ON);
+     CHK(mbedtls_ctr_drbg_seed(&pDtlsSession->ctrDrbg, mbedtls_entropy_func, &pDtlsSession->entropy, NULL, 0) == 0, STATUS_DTLS_CREATE_SSL_FAILED);
+ 
+     CHK_STATUS(io_buffer_create(DEFAULT_MTU_SIZE, &pDtlsSession->pReadBuffer));
+@@ -281,10 +283,8 @@ STATUS dtls_session_start(PDtlsSession pDtlsSession, BOOL isServer)
+         CHK(mbedtls_ssl_conf_own_cert(&pDtlsSession->sslCtxConfig, &pCertInfo->cert, &pCertInfo->privateKey) == 0, STATUS_DTLS_CREATE_SSL_FAILED);
+     }
+     mbedtls_ssl_conf_dtls_cookies(&pDtlsSession->sslCtxConfig, NULL, NULL, NULL);
+-    CHK(mbedtls_ssl_conf_dtls_srtp_protection_profiles(&pDtlsSession->sslCtxConfig, DTLS_SRTP_SUPPORTED_PROFILES,
+-                                                       ARRAY_SIZE(DTLS_SRTP_SUPPORTED_PROFILES)) == 0,
+-        STATUS_DTLS_CREATE_SSL_FAILED);
+-    mbedtls_ssl_conf_export_keys_ext_cb(&pDtlsSession->sslCtxConfig, (mbedtls_ssl_export_keys_ext_t*) dtls_session_deriveKeyCallback, pDtlsSession);
++    CHK(mbedtls_ssl_conf_dtls_srtp_protection_profiles(&pDtlsSession->sslCtxConfig, DTLS_SRTP_SUPPORTED_PROFILES) == 0, STATUS_DTLS_CREATE_SSL_FAILED);
++    mbedtls_ssl_set_export_keys_cb(&pDtlsSession->sslCtxConfig, (mbedtls_ssl_export_keys_t *)dtls_session_deriveKeyCallback, pDtlsSession);
+ 
+     CHK(mbedtls_ssl_setup(&pDtlsSession->sslCtx, &pDtlsSession->sslCtxConfig) == 0, STATUS_DTLS_SSL_CTX_CREATION_FAILED);
+     mbedtls_ssl_set_mtu(&pDtlsSession->sslCtx, DEFAULT_MTU_SIZE);
+@@ -362,7 +362,7 @@ STATUS dtls_session_read(PDtlsSession pDtlsSession, PBYTE pData, PINT32 pDataLen
+         }
+     }
+ 
+-    if (pDtlsSession->sslCtx.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
++    if (pDtlsSession->sslCtx.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER) {
+         CHK_STATUS(dtls_session_changeState(pDtlsSession, RTC_DTLS_TRANSPORT_STATE_CONNECTED));
+     }
+ 
+@@ -383,7 +383,7 @@ STATUS dtls_session_send(PDtlsSession pDtlsSession, PBYTE pData, INT32 dataLen)
+ {
+     ENTERS();
+     STATUS retStatus = STATUS_SUCCESS;
+-    INT32 writtenBytes = 0;
++    INT32 writtenBytes = 0, writeLen = 0;
+     BOOL locked = FALSE;
+     INT32 sslRet;
+     BOOL iterate = TRUE;
+@@ -395,7 +395,9 @@ STATUS dtls_session_send(PDtlsSession pDtlsSession, PBYTE pData, INT32 dataLen)
+     locked = TRUE;
+ 
+     while (iterate && writtenBytes < dataLen) {
+-        sslRet = mbedtls_ssl_write(&pDtlsSession->sslCtx, pData + writtenBytes, dataLen - writtenBytes);
++        // In Dtls, we need to make sure that the packet is smaller than the mtu or MBEDTLS_SSL_OUT_CONTENT_LEN constant
++        writeLen = MIN(dataLen - writtenBytes, mbedtls_ssl_get_max_out_record_payload(&pDtlsSession->sslCtx));
++        sslRet = mbedtls_ssl_write(&pDtlsSession->sslCtx, pData + writtenBytes, writeLen);
+         if (sslRet > 0) {
+             writtenBytes += sslRet;
+         } else if (sslRet == MBEDTLS_ERR_SSL_WANT_READ || sslRet == MBEDTLS_ERR_SSL_WANT_WRITE) {
+@@ -414,7 +416,7 @@ CleanUp:
+     }
+ 
+     LEAVES();
+-    return STATUS_SUCCESS;
++    return retStatus;
+ }
+ 
+ STATUS dtls_session_getLocalCertificateFingerprint(PDtlsSession pDtlsSession, PCHAR pBuff, UINT32 buffLen)
+@@ -477,7 +479,7 @@ STATUS dtls_session_populateKeyingMaterial(PDtlsSession pDtlsSession, PDtlsKeyin
+     BOOL locked = FALSE;
+     PTlsKeys pKeys;
+     BYTE keyingMaterialBuffer[MAX_SRTP_MASTER_KEY_LEN * 2 + MAX_SRTP_SALT_KEY_LEN * 2];
+-    mbedtls_ssl_srtp_profile negotiatedSRTPProfile;
++    mbedtls_dtls_srtp_info negotiatedSRTPProfile;
+ 
+     CHK(pDtlsSession != NULL && pDtlsKeyingMaterial != NULL, STATUS_DTLS_NULL_ARG);
+     pKeys = &pDtlsSession->tlsKeys;
+@@ -502,12 +504,12 @@ STATUS dtls_session_populateKeyingMaterial(PDtlsSession pDtlsSession, PDtlsKeyin
+ 
+     MEMCPY(pDtlsKeyingMaterial->serverWriteKey + MAX_SRTP_MASTER_KEY_LEN, &keyingMaterialBuffer[offset], MAX_SRTP_SALT_KEY_LEN);
+ 
+-    negotiatedSRTPProfile = mbedtls_ssl_get_dtls_srtp_protection_profile(&pDtlsSession->sslCtx);
+-    switch (negotiatedSRTPProfile) {
+-        case MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_80:
++    mbedtls_ssl_get_dtls_srtp_negotiation_result(&pDtlsSession->sslCtx, &negotiatedSRTPProfile);
++    switch (negotiatedSRTPProfile.MBEDTLS_PRIVATE(chosen_dtls_srtp_profile)) {
++        case MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_80:
+             pDtlsKeyingMaterial->srtpProfile = KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_80;
+             break;
+-        case MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_32:
++        case MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_32:
+             pDtlsKeyingMaterial->srtpProfile = KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_32;
+             break;
+         default:
+@@ -552,6 +554,28 @@ CleanUp:
+     return retStatus;
+ }
+ 
++static int mbedtls_test_rnd_std_rand( void *rng_state,
++                                      unsigned char *output,
++                                      size_t len )
++{
++#if !defined(__OpenBSD__) && !defined(__NetBSD__)
++    size_t i;
++
++    if( rng_state != NULL )
++        rng_state  = NULL;
++
++    for( i = 0; i < len; ++i )
++        output[i] = rand();
++#else
++    if( rng_state != NULL )
++        rng_state = NULL;
++
++    arc4random_buf( output, len );
++#endif /* !OpenBSD && !NetBSD */
++
++    return( 0 );
++}
++
+ STATUS certificate_key_copy(mbedtls_x509_crt* pCert, mbedtls_pk_context* pKey, PDtlsSessionCertificateInfo pDst)
+ {
+     ENTERS();
+@@ -560,14 +584,14 @@ STATUS certificate_key_copy(mbedtls_x509_crt* pCert, mbedtls_pk_context* pKey, P
+     mbedtls_ecp_keypair *pSrcECP, *pDstECP;
+ 
+     CHK(pCert != NULL && pKey != NULL && pDst != NULL, STATUS_DTLS_NULL_ARG);
+-    CHK(mbedtls_pk_check_pair(&pCert->pk, pKey) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++    CHK(mbedtls_pk_check_pair(&pCert->pk, pKey, mbedtls_test_rnd_std_rand, NULL) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
+ 
+     mbedtls_x509_crt_init(&pDst->cert);
+     mbedtls_pk_init(&pDst->privateKey);
+     initialized = TRUE;
+ 
+     CHK(mbedtls_x509_crt_parse_der(&pDst->cert, pCert->raw.p, pCert->raw.len) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
+-    CHK(mbedtls_pk_setup(&pDst->privateKey, pKey->pk_info) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++    CHK(mbedtls_pk_setup(&pDst->privateKey, pKey->MBEDTLS_PRIVATE(pk_info)) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
+ 
+     switch (mbedtls_pk_get_type(pKey)) {
+         case MBEDTLS_PK_RSA:
+@@ -577,8 +601,8 @@ STATUS certificate_key_copy(mbedtls_x509_crt* pCert, mbedtls_pk_context* pKey, P
+         case MBEDTLS_PK_ECDSA:
+             pSrcECP = mbedtls_pk_ec(*pKey);
+             pDstECP = mbedtls_pk_ec(pDst->privateKey);
+-            CHK(mbedtls_ecp_group_copy(&pDstECP->grp, &pSrcECP->grp) == 0 && mbedtls_ecp_copy(&pDstECP->Q, &pSrcECP->Q) == 0 &&
+-                    mbedtls_mpi_copy(&pDstECP->d, &pSrcECP->d) == 0,
++            CHK(mbedtls_ecp_group_copy(&pDstECP->MBEDTLS_PRIVATE(grp), &pSrcECP->MBEDTLS_PRIVATE(grp)) == 0 && mbedtls_ecp_copy(&pDstECP->MBEDTLS_PRIVATE(Q), &pSrcECP->MBEDTLS_PRIVATE(Q)) == 0 &&
++                    mbedtls_mpi_copy(&pDstECP->MBEDTLS_PRIVATE(d), &pSrcECP->MBEDTLS_PRIVATE(d)) == 0,
+                 STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
+             break;
+         default:
+diff --git a/src/source/crypto/tls_mbedtls.c b/src/source/crypto/tls_mbedtls.c
+old mode 100644
+new mode 100755
+index f5bbc43da..cba184f2f
+--- a/src/source/crypto/tls_mbedtls.c
++++ b/src/source/crypto/tls_mbedtls.c
+@@ -175,7 +175,7 @@ STATUS tls_session_read(PTlsSession pTlsSession, PBYTE pData, UINT32 bufferLen,
+         }
+     }
+ 
+-    if (pTlsSession->sslCtx.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
++    if (pTlsSession->sslCtx.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER) {
+         tls_session_changeState(pTlsSession, TLS_SESSION_STATE_CONNECTED);
+     }
+ 
+diff --git a/src/source/net/network.c b/src/source/net/network.c
+old mode 100644
+new mode 100755
+index f105aa12b..366276663
+--- a/src/source/net/network.c
++++ b/src/source/net/network.c
+@@ -492,7 +492,7 @@ PCHAR net_getErrorString(INT32 error)
+ }
+ #endif
+ 
+-#ifdef KVS_PLAT_ESP_FREERTOS
++#ifdef KVS_PLAT_ANKAI_FREERTOS
+ PCHAR net_getGaiStrRrror(INT32 error)
+ {
+     return "gai_strerror(errCode) not supported.";
+diff --git a/src/source/signaling/signaling.h b/src/source/signaling/signaling.h
+old mode 100644
+new mode 100755
+index 037354fa7..940b41ac6
+--- a/src/source/signaling/signaling.h
++++ b/src/source/signaling/signaling.h
+@@ -29,6 +29,9 @@ extern "C" {
+ #include "channel_info.h"
+ #include "timer_queue.h"
+ 
++#include "FreeRTOS.h"
++#include "queue.h"
++
+ /******************************************************************************
+  * DEFINITION
+  ******************************************************************************/
+diff --git a/src/source/srtp/srtp_session.h b/src/source/srtp/srtp_session.h
+old mode 100644
+new mode 100755
+index cc31bf709..efe0ce41b
+--- a/src/source/srtp/srtp_session.h
++++ b/src/source/srtp/srtp_session.h
+@@ -28,7 +28,7 @@ extern "C" {
+ #include "kvs/platform_utils.h"
+ #include "crypto.h"
+ #ifdef ENABLE_STREAMING
+-#ifdef KVS_PLAT_ESP_FREERTOS
++#ifdef KVS_PLAT_ANKAI_FREERTOS
+ #include <srtp.h>
+ #else
+ #include <srtp2/srtp.h>
+diff --git a/src/source/utils/mutex.h b/src/source/utils/mutex.h
+old mode 100644
+new mode 100755
+index 0859000e4..874e19005
+--- a/src/source/utils/mutex.h
++++ b/src/source/utils/mutex.h
+@@ -56,11 +56,6 @@ typedef PCONDITION_VARIABLE CVAR;
+ #else
+ #include <pthread.h>
+ #include <signal.h>
+-#if defined(KVS_PLAT_ESP_FREERTOS)
+-#include <esp_pthread.h>
+-#include "esp_heap_caps.h"
+-#include "esp_system.h"
+-#endif
+ typedef pthread_cond_t* CVAR;
+ #endif
+ 
+diff --git a/src/source/utils/thread.c b/src/source/utils/thread.c
+old mode 100644
+new mode 100755
+index 4b0205652..c1febdd67
+--- a/src/source/utils/thread.c
++++ b/src/source/utils/thread.c
+@@ -204,57 +204,8 @@ PUBLIC_API STATUS defaultCreateThreadEx(PTID pThreadId, PCHAR threadName, UINT32
+     CHK_ERR(result == 0, STATUS_THREAD_ATTR_SET_STACK_SIZE_FAILED, "pthread_attr_setstacksize failed with %d", result);
+ #endif
+ 
+-#if defined(KVS_PLAT_ESP_FREERTOS)
+-    UINT32 totalSize = esp_get_free_heap_size();
+-    UINT32 spiSize = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+-    UINT32 internalSize = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+-
+-    esp_pthread_cfg_t pthread_cfg;
+-    esp_err_t esp_err = esp_pthread_get_cfg(&pthread_cfg);
+-    if (esp_err != ESP_OK) {
+-        DLOGW("get the esp pthread cfg failed.");
+-    }
+-
+-    if (threadSize == 0) {
+-        pthread_cfg.stack_size = DEFAULT_THREAD_SIZE;
+-    } else {
+-        pthread_cfg.stack_size = threadSize;
+-    }
+-
+-    if (threadName == NULL) {
+-        pthread_cfg.thread_name = DEFAULT_THREAD_NAME;
+-    } else {
+-        pthread_cfg.thread_name = threadName;
+-    }
+-
+-    esp_err = esp_pthread_set_cfg(&pthread_cfg);
+-
+-    if (esp_err != ESP_OK) {
+-        DLOGW("set the esp pthread cfg failed.");
+-    }
+-
+-    if (joinable == TRUE) {
+-        pthread_attr_setdetachstate(pAttr, PTHREAD_CREATE_JOINABLE);
+-    } else {
+-        pthread_attr_setdetachstate(pAttr, PTHREAD_CREATE_DETACHED);
+-    }
+-
+-    if (threadSize == 0) {
+-        pthread_attr_setstacksize(pAttr, DEFAULT_THREAD_SIZE);
+-    } else {
+-        pthread_attr_setstacksize(pAttr, threadSize);
+-    }
+-#endif
+-
+     result = pthread_create(&threadId, pAttr, start, args);
+ 
+-#if defined(KVS_PLAT_ESP_FREERTOS)
+-    UINT32 curTotalSize = esp_get_free_heap_size();
+-    UINT32 curSpiSize = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+-    UINT32 curInternalSize = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+-    DLOGD("pthread:%s, size:%d requires ram, totalSize:%d, spiSize:%d, internalSize:%d", threadName, threadSize, totalSize - curTotalSize,
+-          spiSize - curSpiSize, internalSize - curInternalSize);
+-#endif
+     switch (result) {
+         case 0:
+             // Successful case
+diff --git a/src/source/utils/thread.h b/src/source/utils/thread.h
+old mode 100644
+new mode 100755
+index 23e38a0da..01c20edb0
+--- a/src/source/utils/thread.h
++++ b/src/source/utils/thread.h
+@@ -21,11 +21,6 @@ extern "C" {
+ // thread stack size to use when running on constrained device like raspberry pi
+ #define THREAD_STACK_SIZE_ON_CONSTRAINED_DEVICE (512 * 1024)
+ 
+-#if defined(KVS_PLAT_ESP_FREERTOS)
+-#define DEFAULT_THREAD_SIZE 4096
+-#define DEFAULT_THREAD_NAME "pthread"
+-#endif
+-
+ // Max thread name buffer length - similar to Linux platforms
+ #ifndef MAX_THREAD_NAME
+ #define MAX_THREAD_NAME 16
+-- 
+2.17.1
+

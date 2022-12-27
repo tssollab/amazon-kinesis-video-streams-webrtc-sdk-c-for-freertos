@@ -1,6 +1,6 @@
 # amazon-kinesis-video-streams-webrtc-sdk-c-for-freertos
 
-This project demonstrate how to port [Amazon Kinesis Video WebRTC C SDK](https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-c) to FreeRTOS.  It uses the [ESP-Wrover-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-wrover-kit.html) as a reference platform.  You may follow the same procedure to port to other hardware platforms.
+This project demonstrate how to port [Amazon Kinesis Video WebRTC C SDK](https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-c) to FreeRTOS.  It uses the [Sky39AV100_SDK_freertos_V0.01] as a reference platform.  You may follow the same procedure to port to other hardware platforms.
 
 ## Clone projects
 
@@ -12,21 +12,7 @@ git submodule update --init --recursive
 
 ## Reference platform
 
-We use [ESP IDF 4.3.1](https://github.com/espressif/esp-idf/releases/tag/v4.3.1) and the [ESP-Wrover-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-wrover-kit.html) as the reference platform. Please follow the [Espressif instructions](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html) to set up the environment. 
-
- There is one modification you need to apply to the ESP IDF.
-
-We have used [mbedtls-2.16.11-idf](https://github.com/espressif/mbedtls) in this project. 
-
-WebRTC needs the functionality of DTLS-for-SRTP ([RFC5764](https://tools.ietf.org/html/rfc5764)). mbedTLS does not support this specification when this project was created. There is one pull request in mbedTLS ([#3235](https://github.com/ARMmbed/mbedtls/pull/3235#)) in progress for adding that support.  Before mbedTLS adopts that pull request,  we need to apply it on top of mbedtls-2.16.11-idf.  If your IDF installation has a mbedTLS version lower than 2.16.11-idf, please upgrade it. 
-
-In this project, we have included all patches from the pull request [pr1813-2.16.6](https://gitlab.linphone.org/BC/public/external/mbedtls/tree/pr1813-2.16.6) under the patches/mbedtls directory, therefore you do not need to pull those patches by yourself.  
-
-Apply the patch located in the patch/mbedtls directory of this project.
-
-```
-esp-idf/components/mbedtls/mbedtls$ git am your_demo_path/patch/mbedtls/*
-```
+We use [Sky39AV100_SDK_freertos_V0.01]
 
 ## Apply patches
 
@@ -48,9 +34,11 @@ This project uses v2.3.0 of libsrtp.  Please apply patches located in patch/libs
 main/lib/libsrtp$ git am ../../../patch/libsrtp/*
 ```
 
-### [mbedtls-2.16.11-idf](https://github.com/espressif/mbedtls)
+### [mbedtls](https://github.com/Mbed-TLS/mbedtls/tree/v3.2.1)
 
-This has been described in the “Reference platform” section above.
+```
+main/lib/mbedtls$ git am ../../../patch/mbedtls/*
+```
 
 ### [usrsctp](https://github.com/sctplab/usrsctp/commit/939d48f9632d69bf170c7a84514b312b6b42257d)
 
@@ -60,35 +48,13 @@ Please apply patches as below.
 main/lib/usrsctp$ git am ../../../patch/usrsctp/*
 ```
 
-If you run into problems when "git am" patches, you can use the following commands to resolve the problem. Or try "git am --abort" the process of git am, then "git apply" individual patches sequentially (in the order of the sequence number indicated by the file name).
-
-```
-$git apply --reject ../../../patch/problem-lib/problems.patch
-// fix *.rej
-$git add .
-$git am --continue
-```
-
 ## Configure the project
 
 Use menuconfig of ESP IDF to configure the project.
 
 ```
-idf.py menuconfig
+./build.sh
 ```
-
-- These parameters under Example Configuration Options must be set.
-
-- - ESP_WIFI_SSID
-  - ESP_WIFI_PASSWORD
-  - ESP_MAXIMUM_RETRY
-  - AWS_ACCESS_KEY_ID
-  - AWS_SECRET_ACCESS_KEY
-  - AWS_DEFAULT_REGION
-  - AWS_KVS_CHANNEL
-  - AWS_KVS_LOG_LEVEL
-
-- The modifications needed by this project can be seen in the sdkconfig file located at the root directory. 
 
 ### Video source
 

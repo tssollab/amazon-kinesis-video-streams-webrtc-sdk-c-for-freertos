@@ -1,0 +1,126 @@
+From 11d2d43d62fe85a23531d51d625e6f0433244095 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Tue, 27 Dec 2022 07:08:14 +0000
+Subject: [PATCH] Fix compile error for Ankai platform
+
+---
+ CMakeLists.txt                   |  4 ++--
+ include/mbedtls/mbedtls_config.h | 18 +++++++++---------
+ 2 files changed, 11 insertions(+), 11 deletions(-)
+ mode change 100644 => 100755 CMakeLists.txt
+ mode change 100644 => 100755 include/mbedtls/mbedtls_config.h
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+old mode 100644
+new mode 100755
+index 0d65b57b8..f897b22f4
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -52,7 +52,7 @@ endif()
+ # Set the project root directory.
+ set(MBEDTLS_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+ 
+-option(ENABLE_PROGRAMS "Build mbed TLS programs." ON)
++option(ENABLE_PROGRAMS "Build mbed TLS programs." OFF)
+ 
+ option(UNSAFE_BUILD "Allow unsafe builds. These builds ARE NOT SECURE." OFF)
+ option(MBEDTLS_FATAL_WARNINGS "Compiler warnings treated as errors" ON)
+@@ -73,7 +73,7 @@ string(REGEX MATCH "MSVC" CMAKE_COMPILER_IS_MSVC "${CMAKE_C_COMPILER_ID}")
+ if(CMAKE_COMPILER_IS_MSVC)
+     option(ENABLE_TESTING "Build mbed TLS tests." OFF)
+ else()
+-    option(ENABLE_TESTING "Build mbed TLS tests." ON)
++    option(ENABLE_TESTING "Build mbed TLS tests." OFF)
+ endif()
+ 
+ # Warning string - created as a list for compatibility with CMake 2.8
+diff --git a/include/mbedtls/mbedtls_config.h b/include/mbedtls/mbedtls_config.h
+old mode 100644
+new mode 100755
+index 1c60ec8e4..05e649466
+--- a/include/mbedtls/mbedtls_config.h
++++ b/include/mbedtls/mbedtls_config.h
+@@ -136,7 +136,7 @@
+  *       regardless of the setting of MBEDTLS_HAVE_TIME, unless
+  *       MBEDTLS_TIMING_ALT is used. See timing.c for more information.
+  */
+-#define MBEDTLS_HAVE_TIME
++//#define MBEDTLS_HAVE_TIME
+ 
+ /**
+  * \def MBEDTLS_HAVE_TIME_DATE
+@@ -157,7 +157,7 @@
+  * mbedtls_platform_gmtime_r() at compile-time by using the macro
+  * MBEDTLS_PLATFORM_GMTIME_R_ALT.
+  */
+-#define MBEDTLS_HAVE_TIME_DATE
++//#define MBEDTLS_HAVE_TIME_DATE
+ 
+ /**
+  * \def MBEDTLS_PLATFORM_MEMORY
+@@ -1010,7 +1010,7 @@
+  *
+  * Enable functions that use the filesystem.
+  */
+-#define MBEDTLS_FS_IO
++//#define MBEDTLS_FS_IO
+ 
+ /**
+  * \def MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
+@@ -1033,7 +1033,7 @@
+  *
+  * Uncomment this macro to disable the built-in platform entropy functions.
+  */
+-//#define MBEDTLS_NO_PLATFORM_ENTROPY
++#define MBEDTLS_NO_PLATFORM_ENTROPY
+ 
+ /**
+  * \def MBEDTLS_ENTROPY_FORCE_SHA256
+@@ -1625,7 +1625,7 @@
+  *
+  * Uncomment this to enable support for use_srtp extension.
+  */
+-//#define MBEDTLS_SSL_DTLS_SRTP
++#define MBEDTLS_SSL_DTLS_SRTP
+ 
+ /**
+  * \def MBEDTLS_SSL_DTLS_CLIENT_PORT_REUSE
+@@ -2501,7 +2501,7 @@
+  *
+  * This module provides networking routines.
+  */
+-#define MBEDTLS_NET_C
++//#define MBEDTLS_NET_C
+ 
+ /**
+  * \def MBEDTLS_OID_C
+@@ -2721,7 +2721,7 @@
+  *           either MBEDTLS_PSA_ITS_FILE_C or a native implementation of
+  *           the PSA ITS interface
+  */
+-#define MBEDTLS_PSA_CRYPTO_STORAGE_C
++//#define MBEDTLS_PSA_CRYPTO_STORAGE_C
+ 
+ /**
+  * \def MBEDTLS_PSA_ITS_FILE_C
+@@ -2733,7 +2733,7 @@
+  *
+  * Requires: MBEDTLS_FS_IO
+  */
+-#define MBEDTLS_PSA_ITS_FILE_C
++//#define MBEDTLS_PSA_ITS_FILE_C
+ 
+ /**
+  * \def MBEDTLS_RIPEMD160_C
+@@ -3080,7 +3080,7 @@
+  *
+  * Module:  library/timing.c
+  */
+-#define MBEDTLS_TIMING_C
++//#define MBEDTLS_TIMING_C
+ 
+ /**
+  * \def MBEDTLS_VERSION_C
+-- 
+2.17.1
+
