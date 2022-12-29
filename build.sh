@@ -1,7 +1,19 @@
 #!/bin/bash
 
-rm -fr build
-mkdir build
-cd build
-cmake .. -DCMAKE_C_COMPILER="/opt/arm-anykav500-eabi/bin/arm-anykav500-eabi-gcc"
+INSTALL_DIR=$1
+BUILD_DIR=build
+
+
+if [ ! -d "$BUILD_DIR"]; then
+    echo "not exist dir $BUILD_DIR"
+else
+    rm -rf "$BUILD_DIR"
+    mkdir "$BUILD_DIR"
+fi
+
+cd "$BUILD_DIR"
+cmake -DCMAKE_TOOLCHAIN_FILE="../CrossCompile.cmake" -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR/../  ..
 make
+make install
+
+

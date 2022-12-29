@@ -1,0 +1,31 @@
+From 900d2dcb204e1e00f5df77220bb0a7705ff8b103 Mon Sep 17 00:00:00 2001
+From: Kevin <zhaoyl0704@thundersoft.com>
+Date: Thu, 29 Dec 2022 10:38:02 +0800
+Subject: [PATCH 10/10] Fix make install error
+
+---
+ CMakeLists.txt | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index dd18f1f..b0b094c 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -212,10 +212,10 @@ if(WIN32)
+ endif()
+ 
+ install(TARGETS srtp2 DESTINATION lib)
+-install(FILES include/srtp.h crypto/include/auth.h
+-  crypto/include/cipher.h
+-  crypto/include/cipher_types.h
+-  DESTINATION include/srtp2)
++#install(FILES include/srtp.h crypto/include/auth.h
++#  crypto/include/cipher.h
++#  crypto/include/cipher_types.h
++#  DESTINATION include/srtp2)
+ 
+ if(TEST_APPS)
+   enable_testing()
+-- 
+2.17.1
+

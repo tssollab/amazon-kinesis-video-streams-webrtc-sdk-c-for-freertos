@@ -1,7 +1,7 @@
-From 0041995228c7c3e941dfa327613a0a58ce6a8e75 Mon Sep 17 00:00:00 2001
+From 4f9f65aecb3d2cd43d96d46be932dc6b6d7bbc03 Mon Sep 17 00:00:00 2001
 From: Lina Chen <chenln1124@thundersoft.com>
 Date: Tue, 27 Dec 2022 07:10:52 +0000
-Subject: [PATCH] Fix compile error for Ankai platform
+Subject: [PATCH 1/2] Fix compile error for Ankai platform
 
 ---
  CMakeLists.txt                   | 16 ++++-----

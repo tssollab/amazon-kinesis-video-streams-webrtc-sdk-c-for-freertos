@@ -1,0 +1,27 @@
+From 78f46a901d6437c1b33f9b45ac31b5381c17209f Mon Sep 17 00:00:00 2001
+From: Kevin <zhaoyl0704@thundersoft.com>
+Date: Thu, 29 Dec 2022 10:29:04 +0800
+Subject: [PATCH 3/3] Fix make install error.
+
+---
+ lib/CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
+index ba24310..9ce6e0f 100644
+--- a/lib/CMakeLists.txt
++++ b/lib/CMakeLists.txt
+@@ -60,7 +60,7 @@ if(WSLAY_CONFIGURE_INSTALL)
+ 		INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+ 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+ 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+-	install(DIRECTORY ${INCLUDE_DIR}/ ${GEN_INCLUDE_DIR}/
+-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+-		FILES_MATCHING PATTERN "*.h")
++	#install(DIRECTORY ${INCLUDE_DIR}/ ${GEN_INCLUDE_DIR}/
++	#	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
++	#	FILES_MATCHING PATTERN "*.h")
+ endif()
+-- 
+2.17.1
+

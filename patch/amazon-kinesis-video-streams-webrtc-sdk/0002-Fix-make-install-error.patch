@@ -1,0 +1,29 @@
+From 80e108496a9d15df8aac102c1e9baf66d9280828 Mon Sep 17 00:00:00 2001
+From: Kevin <zhaoyl0704@thundersoft.com>
+Date: Thu, 29 Dec 2022 12:12:41 +0800
+Subject: [PATCH 2/2] Fix make install error
+
+---
+ CMakeLists.txt | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9bba35608..6569f0983 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -398,9 +398,9 @@ install(TARGETS kvsWebrtcSignalingClient
+   ARCHIVE DESTINATION lib
+ )
+ 
+-install(DIRECTORY ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/src/include/
+-  DESTINATION include
+-)
++#install(DIRECTORY ${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/src/include/
++#  DESTINATION include
++#)
+ 
+ if (BUILD_SAMPLE)
+   file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/samples/opusSampleFrames" DESTINATION .)
+-- 
+2.17.1
+

@@ -1,28 +1,31 @@
 option(ENABLE_STREAMING "enable the streaming" ON)
 option(ENABLE_DATA_CHANNEL "enable the data channel" ON)
 
-set(PLATFORM_DIRS "${CMAKE_SOURCE_DIR}/../Sky39AV100_SDK_freertos_V0.01/os/kernel")
-set(PLATFORM_INCLUDE_DIRS "${PLATFORM_DIRS}/bsp"
-                          "${PLATFORM_DIRS}/bsp/configs"
-                          "${PLATFORM_DIRS}/bsp/include"
-                          "${PLATFORM_DIRS}/bsp/include/linux"
-                          "${PLATFORM_DIRS}/bsp/osal"
-                          "${PLATFORM_DIRS}/components/driver/core"
-                          "${PLATFORM_DIRS}/components/libc/pthreads"
-                          "${PLATFORM_DIRS}/components/libc/time"
-                          "${PLATFORM_DIRS}/components/msh"
-                          "${PLATFORM_DIRS}/components/net/lwip-2.1.0/src"
-                          "${PLATFORM_DIRS}/components/net/lwip-2.1.0/src/arch/include"
-                          "${PLATFORM_DIRS}/components/net/lwip-2.1.0/src/include"
-                          "${PLATFORM_DIRS}/components/net/lwip-2.1.0/src/include/compat/posix"
-                          "${PLATFORM_DIRS}/components/net/sal_socket/include"
-                          "${PLATFORM_DIRS}/components/net/sal_socket/include/socket"
-                          "${PLATFORM_DIRS}/components/net/sal_socket/include/socket/sys_socket"
-                          "${PLATFORM_DIRS}/components/net/netdev/include"
-                          "${PLATFORM_DIRS}/components/vfs/include"
-                          "${PLATFORM_DIRS}/FreeRTOS/Source/include"
-                          "${PLATFORM_DIRS}/FreeRTOS/Source/portable/GCC/ARM926EJ-S")
+set(PLATFORM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../../os/kernel/bsp"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/bsp/configs"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/bsp/include"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/bsp/include/linux"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/bsp/osal"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/driver/core"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/libc/pthreads"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/libc/time"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/msh"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/lwip-2.1.0/src"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/lwip-2.1.0/src/arch/include"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/lwip-2.1.0/src/include"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/lwip-2.1.0/src/include/compat/posix"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/sal_socket/include"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/sal_socket/include/socket"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/sal_socket/include/socket/sys_socket"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/netdev/include"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/vfs/include"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/FreeRTOS/Source/include"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/FreeRTOS/Source/portable/GCC/ARM926EJ-S"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/libc/pthreads"
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/libc/time")
 include_directories("${PLATFORM_INCLUDE_DIRS}")
+
+set(COMPONENT_LIB webrtc_test)
 
 set(LIB_SOURCE_DIR "${CMAKE_SOURCE_DIR}/main/lib")
 
@@ -47,13 +50,40 @@ set(LIBKVSWEBRTC_INCLUDE_DIRS "${LIB_SOURCE_DIR}/${LIBKVSWEBRTC_NAME}/src/includ
                               "${LIB_SOURCE_DIR}/${LIBKVSWEBRTC_NAME}/src/source/stun"
                               "${LIB_SOURCE_DIR}/${LIBKVSWEBRTC_NAME}/src/source/utils")
 
-set(OPEN_SRC_INCLUDE_DIRS "${PLATFORM_INCLUDE_DIRS}" "${LIBKVSWEBRTC_INCLUDE_DIRS}")
+set(OPEN_SRC_INCLUDE_DIRS "${LIBKVSWEBRTC_INCLUDE_DIRS}")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ggdb -O2 -mcpu=arm926ej-s -std=c99 -mlittle-endian -fno-short-enums -fno-builtin -nostdlib -static -nostartfiles  -mlong-calls -fdiagnostics-color=auto")
+set(APP_INCLUDE_DIRS "./include")
+add_library(${COMPONENT_LIB} STATIC kvswebrtc_example_main.c)
+                                #   AppCommon.c
+                                #   AppCredential.c
+                                #   AppDataChannel.c
+                                #   AppMediaSrc_ESP32_FileSrc.c
+                                #   AppMain.c
+                                #   AppMessageQueue.c
+                                #   AppMetrics.c
+                                #   AppSignaling.c
+                                #   AppWebRTC.c)
+
+target_include_directories(${COMPONENT_LIB} PUBLIC
+    ${PLATFORM_INCLUDE_DIRS}
+    ${OPEN_SRC_INCLUDE_DIRS}
+    ${APP_INCLUDE_DIRS}
+)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ggdb -O2 -mcpu=arm926ej-s -std=c99 -fgnu89-inline -mlittle-endian -fno-short-enums -fno-builtin -nostdlib -static -nostartfiles  -mlong-calls -fdiagnostics-color=auto")
 add_definitions(-DRT_USING_LWIP_IPV6)
 
 set(KVS_PLAT_ANKAI_FREERTOS ON CACHE BOOL "Build for ANKAI FreeRTOS")
 add_definitions(-DKVS_PLAT_ANKAI_FREERTOS)
+add_definitions(-DAK_RTOS)
+add_definitions(-DKERNEL_FREERTOS)
+add_definitions(-DFAST_LAUNCH)
+add_definitions(-DISP_QUICK_START_ENABLE)
+add_definitions(-D__CHIP_AK3918AV100_SERIES)
+add_definitions(-DMACH_AK3918AV100)
+
+
+
 if (ENABLE_STREAMING)
         add_definitions(-DENABLE_STREAMING)
         set(ENABLE_STREAMING ON CACHE BOOL "Enable support for streaming")
@@ -78,7 +108,7 @@ set_property(TARGET llhttp APPEND PROPERTY LINK_LIBRARIES
 set_property(TARGET llhttp APPEND PROPERTY INTERFACE_LINK_LIBRARIES
         ${nvs_flash_lib}
         ${mbedtls_lib})
-# target_link_libraries(${COMPONENT_LIB} PUBLIC llhttp)
+target_link_libraries(${COMPONENT_LIB} PUBLIC llhttp)
 set(KVS_LIBLLHTTP_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/libllhttp/include" "${LIB_SOURCE_DIR}/libllhttp/include")
 
 message("############################## start wslay ##############################")
@@ -89,7 +119,7 @@ set_property(TARGET wslay APPEND PROPERTY LINK_LIBRARIES
 set_property(TARGET wslay APPEND PROPERTY INTERFACE_LINK_LIBRARIES
         ${nvs_flash_lib}
 	${mbedtls_lib})
-# target_link_libraries(${COMPONENT_LIB} PUBLIC wslay)
+target_link_libraries(${COMPONENT_LIB} PUBLIC wslay)
 set(KVS_LIBWSLAY_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/wslay/lib/includes" "${LIB_SOURCE_DIR}/wslay/lib/includes")
 
 message("############################## start mbedtls ##############################")
@@ -100,7 +130,7 @@ set_property(TARGET mbedtls APPEND PROPERTY LINK_LIBRARIES
 set_property(TARGET mbedtls APPEND PROPERTY INTERFACE_LINK_LIBRARIES
         ${nvs_flash_lib}
         ${mbedtls_lib})
-# target_link_libraries(${COMPONENT_LIB} PUBLIC mbedtls)
+target_link_libraries(${COMPONENT_LIB} PUBLIC mbedtls)
 set(KVS_LIBMBEDTLS_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/mbedtls/lib/includes" "${LIB_SOURCE_DIR}/mbedtls/include")
 set(MBEDTLS_INCLUDE_DIRS "${KVS_LIBMBEDTLS_INCLUDE_DIRS}")
 
@@ -109,7 +139,7 @@ if(ENABLE_STREAMING)
         add_subdirectory(lib/libsrtp)
         set_property(TARGET srtp2 APPEND PROPERTY LINK_LIBRARIES ${mbedtls_lib})
         set_property(TARGET srtp2 APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${mbedtls_lib})
-        # target_link_libraries(${COMPONENT_LIB} PUBLIC srtp2)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC srtp2)
         set(KVS_LIBSRTP_INCLUDE_DIRS "${LIB_SOURCE_DIR}/libsrtp/include")
 endif()
 
@@ -119,11 +149,11 @@ if(ENABLE_DATA_CHANNEL)
         add_definitions(-DSCTP_USE_RTOS)
         set(sctp_link_programs_static ON CACHE BOOL "Link example programs static")
         add_subdirectory(lib/usrsctp)
-        # set_property(TARGET usrsctp APPEND PROPERTY LINK_LIBRARIES ${mbedtls_lib} ${esp_common_lib} ${pthread_lib})
-        # set_property(TARGET usrsctp APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${mbedtls_lib} ${esp_common_lib} ${pthread_lib})
+        set_property(TARGET usrsctp APPEND PROPERTY LINK_LIBRARIES ${mbedtls_lib} ${esp_common_lib} ${pthread_lib})
+        set_property(TARGET usrsctp APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${mbedtls_lib} ${esp_common_lib} ${pthread_lib})
         set_property(TARGET usrsctp-static APPEND PROPERTY LINK_LIBRARIES ${mbedtls_lib} ${esp_common_lib} ${pthread_lib})
         set_property(TARGET usrsctp-static APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${mbedtls_lib} ${esp_common_lib} ${pthread_lib})
-        # target_link_libraries(${COMPONENT_LIB} PUBLIC usrsctp)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC usrsctp)
         set(KVS_USRSCTP_INCLUDE_DIRS "${LIB_SOURCE_DIR}/usrsctp/usrsctplib")
 endif()
 
@@ -155,7 +185,7 @@ set_property(TARGET kvsWebrtcSignalingClient APPEND PROPERTY INTERFACE_LINK_LIBR
         wslay
         llhttp
         ${mbedtls_lib})
-# target_link_libraries(${COMPONENT_LIB} PUBLIC kvsWebrtcSignalingClient)
+target_link_libraries(${COMPONENT_LIB} PUBLIC kvsWebrtcSignalingClient)
 
 set_property(TARGET kvsWebrtcClient APPEND PROPERTY LINK_LIBRARIES
         ${esp_common_lib} ${pthread_lib}
@@ -182,24 +212,7 @@ endif()
 if(ENABLE_DATA_CHANNEL)
         set_property(TARGET kvsWebrtcClient APPEND PROPERTY INTERFACE_LINK_LIBRARIES usrsctp)
 endif()
-# target_link_libraries(${COMPONENT_LIB} PUBLIC kvsWebrtcClient)
+target_link_libraries(${COMPONENT_LIB} PUBLIC kvsWebrtcClient)
 
-# set(APP_INCLUDE_DIRS "./include")
-# add_library(webrtc_example STATIC kvswebrtc_example_main.c)
-                                #   AppCommon.c
-                                #   AppCredential.c
-                                #   AppDataChannel.c
-                                #   AppMediaSrc_ESP32_FileSrc.c
-                                #   AppMain.c
-                                #   AppMessageQueue.c
-                                #   AppMetrics.c
-                                #   AppSignaling.c
-                                #   AppWebRTC.c)
 
-# target_include_directories(webrtc_example PUBLIC
-#     ${OPEN_SRC_INCLUDE_DIRS}
-# )
-
-# target_link_directories(llhttp PUBLIC
-#     ${CMAKE_CURRENT_SOURCE_DIR}/include
-# )
+install(TARGETS ${COMPONENT_LIB} DESTINATION lib)

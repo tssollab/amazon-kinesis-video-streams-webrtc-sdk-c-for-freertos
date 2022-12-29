@@ -1,0 +1,22 @@
+From 68d1f71e12f8f9f4f81cc44a45f97c21229fe16c Mon Sep 17 00:00:00 2001
+From: Kevin <zhaoyl0704@thundersoft.com>
+Date: Thu, 29 Dec 2022 10:32:31 +0800
+Subject: [PATCH 8/8] Fix make install error
+
+---
+ usrsctplib/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/usrsctplib/CMakeLists.txt b/usrsctplib/CMakeLists.txt
+index 7f45b47..1a85761 100644
+--- a/usrsctplib/CMakeLists.txt
++++ b/usrsctplib/CMakeLists.txt
+@@ -214,4 +214,4 @@ endif ()
+ #################################################
+ 
+ install(TARGETS usrsctp usrsctp-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
+-install(FILES usrsctp.h DESTINATION include)
++#install(FILES usrsctp.h DESTINATION include)
+-- 
+2.17.1
+
