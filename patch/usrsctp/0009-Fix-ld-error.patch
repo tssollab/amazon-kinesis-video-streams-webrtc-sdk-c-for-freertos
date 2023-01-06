@@ -1,0 +1,92 @@
+From bf00a7686c5abaad8720d2bc9eb716eb5db3a040 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Fri, 6 Jan 2023 02:27:58 +0000
+Subject: [PATCH 9/9] Fix ld error.
+
+---
+ usrsctplib/CMakeLists.txt      |  4 ++++
+ usrsctplib/netinet/sctp_sha1.h |  1 +
+ usrsctplib/user_atomic.h       | 18 +++++++++++++++++-
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+ mode change 100644 => 100755 usrsctplib/CMakeLists.txt
+
+diff --git a/usrsctplib/CMakeLists.txt b/usrsctplib/CMakeLists.txt
+old mode 100644
+new mode 100755
+index 1a85761..9fb927c
+--- a/usrsctplib/CMakeLists.txt
++++ b/usrsctplib/CMakeLists.txt
+@@ -198,6 +198,10 @@ endif ()
+ 
+ if(SCTP_USE_MBEDTLS_SHA1)
+ 	target_link_libraries(usrsctp PRIVATE ${MBEDTLS_LIBRARIES})
++    if(KVS_PLAT_ANKAI_FREERTOS)
++	set(PLATFORM_LIBRARY_DIRS ${CMAKE_SOURCE_DIR}/../../os)
++	target_link_libraries(usrsctp PRIVATE ${PLATFORM_LIBRARY_DIRS}/libfreertos.a)
++    endif()
+ endif()
+ 
+ set_target_properties(usrsctp-static PROPERTIES OUTPUT_NAME "usrsctp")
+diff --git a/usrsctplib/netinet/sctp_sha1.h b/usrsctplib/netinet/sctp_sha1.h
+index 9ff4ff7..08b0e7a 100755
+--- a/usrsctplib/netinet/sctp_sha1.h
++++ b/usrsctplib/netinet/sctp_sha1.h
+@@ -48,6 +48,7 @@ __FBSDID("$FreeBSD$");
+ #include <openssl/sha.h>
+ #elif defined(SCTP_USE_MBEDTLS_SHA1)
+ #include <mbedtls/sha1.h>
++#include <mbedtls/compat-2.x.h>
+ #endif
+ 
+ struct sctp_sha1_context {
+diff --git a/usrsctplib/user_atomic.h b/usrsctplib/user_atomic.h
+index 6a59587..ac5ada8 100755
+--- a/usrsctplib/user_atomic.h
++++ b/usrsctplib/user_atomic.h
+@@ -90,17 +90,30 @@ static inline void atomic_init(void) {} /* empty when we are not using atomic_mt
+    compile with -march=i486
+  */
+ 
++
+ /*Atomically add V to *P.*/
++#if defined(KVS_PLAT_ANKAI_FREERTOS)
++#define atomic_add_int(P, V)	 (void) __atomic_fetch_add(P, V, __ATOMIC_SEQ_CST)
++#else
+ #define atomic_add_int(P, V)	 (void) __sync_fetch_and_add(P, V)
++#endif
+ 
+ /*Atomically subtrace V from *P.*/
++#if defined(KVS_PLAT_ANKAI_FREERTOS)
++#define atomic_subtract_int(P, V)	 (void) __atomic_fetch_sub(P, V, __ATOMIC_SEQ_CST)
++#else
+ #define atomic_subtract_int(P, V) (void) __sync_fetch_and_sub(P, V)
++#endif
+ 
+ /*
+  * Atomically add the value of v to the integer pointed to by p and return
+  * the previous value of *p.
+  */
++#if defined(KVS_PLAT_ANKAI_FREERTOS)
++#define atomic_fetchadd_int(p, v) __atomic_fetch_add(p, v,  __ATOMIC_SEQ_CST)
++#else
+ #define atomic_fetchadd_int(p, v) __sync_fetch_and_add(p, v)
++#endif
+ 
+ /* Following explanation from src/sys/i386/include/atomic.h,
+  * for atomic compare and set
+@@ -109,8 +122,11 @@ static inline void atomic_init(void) {} /* empty when we are not using atomic_mt
+  *
+  * Returns 0 on failure, non-zero on success
+  */
+-
++#if defined(KVS_PLAT_ANKAI_FREERTOS)
++#define atomic_cmpset_int(dst, exp, src) __atomic_exchange_n(dst, src, __ATOMIC_SEQ_CST)
++#else
+ #define atomic_cmpset_int(dst, exp, src) __sync_bool_compare_and_swap(dst, exp, src)
++#endif
+ 
+ #define SCTP_DECREMENT_AND_CHECK_REFCOUNT(addr) (atomic_fetchadd_int(addr, -1) == 1)
+ #if defined(INVARIANTS)
+-- 
+2.17.1
+

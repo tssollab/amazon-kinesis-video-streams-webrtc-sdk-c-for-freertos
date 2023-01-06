@@ -1,0 +1,109 @@
+From c273851b4df0e7d9d4c2127f464732f11305fb5d Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Fri, 6 Jan 2023 02:24:27 +0000
+Subject: [PATCH 3/3] Fix ld error.
+
+---
+ CMakeLists.txt                |  7 +++++++
+ src/include/kvs/common.h      |  2 +-
+ src/include/kvs/common_defs.h |  4 ++++
+ src/source/crypto/crypto.h    |  1 +
+ src/source/net/network.c      | 16 ++++++++--------
+ 5 files changed, 21 insertions(+), 9 deletions(-)
+ mode change 100644 => 100755 src/include/kvs/common_defs.h
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6569f0983..da246ee0d 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -319,10 +319,17 @@ include_directories(${KINESIS_VIDEO_WEBRTC_CLIENT_SRC}/src/include)
+ 
+ add_library(kvsWebrtcStateMachine STATIC ${WEBRTC_STATE_MACHINE_SOURCE_FILES})
+ target_link_libraries(kvsWebrtcStateMachine)
++if(KVS_PLAT_ANKAI_FREERTOS)
++  set(PLATFORM_LIBRARY_DIRS ${CMAKE_SOURCE_DIR}/../../os)
++  target_link_libraries(kvsWebrtcStateMachine PRIVATE ${PLATFORM_LIBRARY_DIRS}/libfreertos.a c)
++endif()
+ 
+ add_library(kvsWebrtcUtils STATIC ${WEBRTC_UTILS_SOURCE_FILES})
+ 
+ target_link_libraries(kvsWebrtcUtils ${CMAKE_THREAD_LIBS_INIT})
++if(KVS_PLAT_ANKAI_FREERTOS)
++  target_link_libraries(kvsWebrtcUtils PRIVATE ${PLATFORM_LIBRARY_DIRS}/libfreertos.a c)
++endif()
+ 
+ if(UNIX AND NOT APPLE)
+   # rt needed for clock_gettime
+diff --git a/src/include/kvs/common.h b/src/include/kvs/common.h
+index 7aeae3cb8..9c5e8d13a 100755
+--- a/src/include/kvs/common.h
++++ b/src/include/kvs/common.h
+@@ -202,7 +202,7 @@ extern "C" {
+ #define DEFAULT_KVS_CACERT_PATH KVS_CA_CERT_PATH
+ #else
+ #ifdef KVS_PLAT_ANKAI_FREERTOS
+-#define DEFAULT_KVS_CACERT_PATH "/sdcard/cert.pem"
++#define DEFAULT_KVS_CACERT_PATH "/mnt/cert.pem"
+ #else
+ #define DEFAULT_KVS_CACERT_PATH EMPTY_STRING
+ #endif
+diff --git a/src/include/kvs/common_defs.h b/src/include/kvs/common_defs.h
+old mode 100644
+new mode 100755
+index 6eb07f90b..67e8f9d51
+--- a/src/include/kvs/common_defs.h
++++ b/src/include/kvs/common_defs.h
+@@ -390,7 +390,11 @@ typedef INT_PTR SSIZE_T, *PSSIZE_T;
+ #include <stdarg.h>
+ #include <stdio.h>
+ #include <sys/stat.h>
++#ifdef KVS_PLAT_ANKAI_FREERTOS
++#include "lwip/errno.h"
++#else
+ #include <errno.h>
++#endif
+ 
+ #include <ctype.h>
+ #define TOLOWER    tolower
+diff --git a/src/source/crypto/crypto.h b/src/source/crypto/crypto.h
+index f8168e6ad..c6c27d9eb 100755
+--- a/src/source/crypto/crypto.h
++++ b/src/source/crypto/crypto.h
+@@ -30,6 +30,7 @@ extern "C" {
+ #include <mbedtls/sha256.h>
+ #include <mbedtls/md5.h>
+ #include <mbedtls/error.h>
++#include <mbedtls/compat-2.x.h>
+ #endif
+ 
+ /******************************************************************************
+diff --git a/src/source/net/network.c b/src/source/net/network.c
+index 366276663..95c9df94c 100755
+--- a/src/source/net/network.c
++++ b/src/source/net/network.c
+@@ -151,14 +151,14 @@ STATUS net_getLocalhostIpAddresses(PKvsIpAddress destIpList, PUINT32 pDestIpList
+     }
+ #else
+     //#error "need to add the network interface."
+-    extern char* esp_get_ip(void);
+-    destIpList[ipCount].isPointToPoint = 0;
+-    destIpList[ipCount].family = KVS_IP_FAMILY_TYPE_IPV4;
+-    destIpList[ipCount].port = 0;
+-    MEMCPY(destIpList[ipCount].address, esp_get_ip(), IPV4_ADDRESS_LENGTH);
+-    DLOGD("Acquried IP: %d.%d.%d.%d", destIpList[ipCount].address[0], destIpList[ipCount].address[1], destIpList[ipCount].address[2],
+-          destIpList[ipCount].address[3]);
+-    ipCount++;
++    // extern char* esp_get_ip(void);
++    // destIpList[ipCount].isPointToPoint = 0;
++    // destIpList[ipCount].family = KVS_IP_FAMILY_TYPE_IPV4;
++    // destIpList[ipCount].port = 0;
++    // MEMCPY(destIpList[ipCount].address, esp_get_ip(), IPV4_ADDRESS_LENGTH);
++    // DLOGD("Acquried IP: %d.%d.%d.%d", destIpList[ipCount].address[0], destIpList[ipCount].address[1], destIpList[ipCount].address[2],
++    //       destIpList[ipCount].address[3]);
++    // ipCount++;
+ #endif
+ #endif
+ 
+-- 
+2.17.1
+

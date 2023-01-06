@@ -20,9 +20,7 @@ set(PLATFORM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../../os/kernel/bsp"
                           "${CMAKE_SOURCE_DIR}/../../os/kernel/components/net/netdev/include"
                           "${CMAKE_SOURCE_DIR}/../../os/kernel/components/vfs/include"
                           "${CMAKE_SOURCE_DIR}/../../os/kernel/FreeRTOS/Source/include"
-                          "${CMAKE_SOURCE_DIR}/../../os/kernel/FreeRTOS/Source/portable/GCC/ARM926EJ-S"
-                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/libc/pthreads"
-                          "${CMAKE_SOURCE_DIR}/../../os/kernel/components/libc/time")
+                          "${CMAKE_SOURCE_DIR}/../../os/kernel/FreeRTOS/Source/portable/GCC/ARM926EJ-S")
 include_directories("${PLATFORM_INCLUDE_DIRS}")
 
 set(COMPONENT_LIB webrtc_test)
@@ -53,16 +51,16 @@ set(LIBKVSWEBRTC_INCLUDE_DIRS "${LIB_SOURCE_DIR}/${LIBKVSWEBRTC_NAME}/src/includ
 set(OPEN_SRC_INCLUDE_DIRS "${LIBKVSWEBRTC_INCLUDE_DIRS}")
 
 set(APP_INCLUDE_DIRS "./include")
-add_library(${COMPONENT_LIB} STATIC kvswebrtc_example_main.c)
-                                #   AppCommon.c
-                                #   AppCredential.c
-                                #   AppDataChannel.c
-                                #   AppMediaSrc_ESP32_FileSrc.c
-                                #   AppMain.c
-                                #   AppMessageQueue.c
-                                #   AppMetrics.c
-                                #   AppSignaling.c
-                                #   AppWebRTC.c)
+add_library(${COMPONENT_LIB} STATIC kvswebrtc_example_main.c
+                                    AppCommon.c
+                                    AppCredential.c
+                                    AppDataChannel.c
+                                    AppMediaSrc_ESP32_FileSrc.c
+                                    AppMain.c
+                                    AppMessageQueue.c
+                                    AppMetrics.c
+                                    AppSignaling.c
+                                    AppWebRTC.c)
 
 target_include_directories(${COMPONENT_LIB} PUBLIC
     ${PLATFORM_INCLUDE_DIRS}
