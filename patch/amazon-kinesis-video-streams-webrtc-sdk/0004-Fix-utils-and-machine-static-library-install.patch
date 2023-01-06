@@ -1,0 +1,25 @@
+From 45da97ba2e287a05e70e3bc774c56f36b886cb21 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Fri, 6 Jan 2023 08:34:08 +0000
+Subject: [PATCH 4/4] Fix utils and machine static library install.
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index da246ee0d..c0997b18a 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -400,7 +400,7 @@ install(TARGETS kvsWebrtcClient
+ )
+ endif()
+ 
+-install(TARGETS kvsWebrtcSignalingClient
++install(TARGETS kvsWebrtcSignalingClient kvsWebrtcUtils kvsWebrtcStateMachine
+   LIBRARY DESTINATION lib
+   ARCHIVE DESTINATION lib
+ )
+-- 
+2.17.1
+
