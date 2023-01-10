@@ -16,6 +16,8 @@
 #include "AppMediaSrc_ESP32_FileSrc.h"
 
 #include "kernel.h"
+#include "netdev_ipaddr.h"
+#include "netdev.h"
 
 #define CONFIG_AWS_KVS_LOG_LEVEL                  2
 #define CONFIG_AWS_DEFAULT_REGION                 "us-east-1"
@@ -28,10 +30,50 @@
 // #define CONFIG_AWS_IOT_CORE_ROLE_ALIAS
 // #define CONFIG_AWS_IOT_CORE_THING_NAME
 
-// static void time_sync_notification_cb(struct timeval *tv)
-// {
-//     printf("Notification of a time synchronization event.\n");
-// }
+#define IPSTR "%d.%d.%d.%d"
+#define app_ip4_addr_get_byte(ipaddr, idx) (((const uint8_t*)ipaddr)[idx])
+#define app_ip4_addr1(ipaddr) app_ip4_addr_get_byte(ipaddr, 0)
+#define app_ip4_addr2(ipaddr) app_ip4_addr_get_byte(ipaddr, 1)
+#define app_ip4_addr3(ipaddr) app_ip4_addr_get_byte(ipaddr, 2)
+#define app_ip4_addr4(ipaddr) app_ip4_addr_get_byte(ipaddr, 3)
+
+#define app_ip4_addr1_16(ipaddr) ((uint16_t)app_ip4_addr1(ipaddr))
+#define app_ip4_addr2_16(ipaddr) ((uint16_t)app_ip4_addr2(ipaddr))
+#define app_ip4_addr3_16(ipaddr) ((uint16_t)app_ip4_addr3(ipaddr))
+#define app_ip4_addr4_16(ipaddr) ((uint16_t)app_ip4_addr4(ipaddr))
+
+#define IP2STR(ipaddr) app_ip4_addr1_16(ipaddr), \
+    app_ip4_addr2_16(ipaddr), \
+    app_ip4_addr3_16(ipaddr), \
+    app_ip4_addr4_16(ipaddr)
+
+static char eth0_ip[72];
+
+char* app_get_ip( void )
+{
+	struct netdev *pdev;
+
+    pdev = netdev_get_by_name("eth0");
+    if (pdev == NULL)
+    {
+        printf("cannot get eth0 device\n");
+        return NULL;
+    }
+
+    memset(eth0_ip, 0, sizeof(eth0_ip)/sizeof(eth0_ip[0]));
+    // printf("eth0 addr:%s, %d\n", inet_ntoa(pdev->ip_addr), inet_addr(inet_ntoa(pdev->ip_addr)));
+    uint32_t addr = inet_addr(inet_ntoa(pdev->ip_addr));
+    printf("Connected with IP Address:" IPSTR "\n", IP2STR(&addr));
+    memcpy(eth0_ip, &addr, 4);
+    printf("Trans IP Address: %d.%d.%d.%d\n", eth0_ip[0], eth0_ip[1], eth0_ip[2], eth0_ip[3]);
+
+    return eth0_ip;
+}
+
+static void time_sync_notification_cb(struct timeval *tv)
+{
+    printf("Notification of a time synchronization event.\n");
+}
 
 // static void initialize_sntp(void)
 // {
@@ -49,9 +91,9 @@ static int webrtc_test(int argc, char **argv)
 {
     printf("enter %s\n", __func__);
 
-    // // using ntp to acquire the current time.
+    // using ntp to acquire the current time.
     // {
-    //     initialize_sntp();
+        // initialize_sntp();
 
     //     // wait for time to be set
     //     time_t now = 0;
@@ -82,6 +124,7 @@ static int webrtc_test(int argc, char **argv)
     #endif
 
     WebRTCAppMain(&gAppMediaSrc);
+    // app_get_ip();
     // FILE* fp = NULL;
     // fp = fopen("/mnt/a.txt", "r");
     // if (NULL != fp)

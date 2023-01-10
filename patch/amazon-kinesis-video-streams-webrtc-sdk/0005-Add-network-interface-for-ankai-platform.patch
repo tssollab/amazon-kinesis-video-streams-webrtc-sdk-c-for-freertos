@@ -1,0 +1,39 @@
+From a5ed0c222ba1c135a7a76d596fe77574f5f22386 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Tue, 10 Jan 2023 06:55:20 +0000
+Subject: [PATCH 5/5] Add network interface for ankai platform.
+
+---
+ src/source/net/network.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/src/source/net/network.c b/src/source/net/network.c
+index 95c9df94c..03d8358bc 100755
+--- a/src/source/net/network.c
++++ b/src/source/net/network.c
+@@ -151,14 +151,14 @@ STATUS net_getLocalhostIpAddresses(PKvsIpAddress destIpList, PUINT32 pDestIpList
+     }
+ #else
+     //#error "need to add the network interface."
+-    // extern char* esp_get_ip(void);
+-    // destIpList[ipCount].isPointToPoint = 0;
+-    // destIpList[ipCount].family = KVS_IP_FAMILY_TYPE_IPV4;
+-    // destIpList[ipCount].port = 0;
+-    // MEMCPY(destIpList[ipCount].address, esp_get_ip(), IPV4_ADDRESS_LENGTH);
+-    // DLOGD("Acquried IP: %d.%d.%d.%d", destIpList[ipCount].address[0], destIpList[ipCount].address[1], destIpList[ipCount].address[2],
+-    //       destIpList[ipCount].address[3]);
+-    // ipCount++;
++    extern char* app_get_ip(void);
++    destIpList[ipCount].isPointToPoint = 0;
++    destIpList[ipCount].family = KVS_IP_FAMILY_TYPE_IPV4;
++    destIpList[ipCount].port = 0;
++    MEMCPY(destIpList[ipCount].address, app_get_ip(), IPV4_ADDRESS_LENGTH);
++    DLOGD("Acquried IP: %d.%d.%d.%d", destIpList[ipCount].address[0], destIpList[ipCount].address[1], destIpList[ipCount].address[2],
++          destIpList[ipCount].address[3]);
++    ipCount++;
+ #endif
+ #endif
+ 
+-- 
+2.17.1
+
