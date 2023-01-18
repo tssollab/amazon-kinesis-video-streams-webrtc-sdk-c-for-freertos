@@ -1,0 +1,32 @@
+From 1858248d35073b64aaf814c73890599019b01fe9 Mon Sep 17 00:00:00 2001
+From: Kevin <zhaoyl0704@thundersoft.com>
+Date: Wed, 18 Jan 2023 13:57:26 +0800
+Subject: [PATCH 6/6] Add function of compiling aws configuration
+
+---
+ src/include/kvs/common_defs.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+ mode change 100755 => 100644 src/include/kvs/common_defs.h
+
+diff --git a/src/include/kvs/common_defs.h b/src/include/kvs/common_defs.h
+old mode 100755
+new mode 100644
+index 67e8f9d51..54dcc64ea
+--- a/src/include/kvs/common_defs.h
++++ b/src/include/kvs/common_defs.h
+@@ -481,7 +481,12 @@ typedef struct stat STAT_STRUCT;
+ //
+ // Environment variables
+ //
++#ifdef ENABLE_HEADER_CONFIG_CLIENT_INFO
++#include "cmake_config_aws.h"
++#define GETENV aws_env_value_by_key
++#else
+ #define GETENV getenv
++#endif
+ 
+ //
+ // Pseudo-random functionality
+-- 
+2.17.1
+

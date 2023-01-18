@@ -1,7 +1,7 @@
-From ea7126043b8ba22ce2f8b01bd41068d38f43ec15 Mon Sep 17 00:00:00 2001
+From ab1b479d3643edfd87a8519964f3ab7e4d4f35c6 Mon Sep 17 00:00:00 2001
 From: Kevin <zhaoyl0704@thundersoft.com>
 Date: Thu, 29 Dec 2022 12:12:41 +0800
-Subject: [PATCH 2/5] Fix make install error
+Subject: [PATCH 2/6] Fix make install error
 
 ---
  CMakeLists.txt | 6 +++---

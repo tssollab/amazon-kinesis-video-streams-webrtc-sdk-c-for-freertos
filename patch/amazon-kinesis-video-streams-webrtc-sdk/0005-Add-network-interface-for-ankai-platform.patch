@@ -1,7 +1,7 @@
-From a5ed0c222ba1c135a7a76d596fe77574f5f22386 Mon Sep 17 00:00:00 2001
+From d4fce4f5100224df1031df800e0c131c0ab384a5 Mon Sep 17 00:00:00 2001
 From: Lina Chen <chenln1124@thundersoft.com>
 Date: Tue, 10 Jan 2023 06:55:20 +0000
-Subject: [PATCH 5/5] Add network interface for ankai platform.
+Subject: [PATCH 5/6] Add network interface for ankai platform.
 
 ---
  src/source/net/network.c | 16 ++++++++--------

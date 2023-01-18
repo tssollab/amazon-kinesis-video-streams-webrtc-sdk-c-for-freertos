@@ -1,5 +1,14 @@
 option(ENABLE_STREAMING "enable the streaming" ON)
 option(ENABLE_DATA_CHANNEL "enable the data channel" ON)
+option(ENABLE_HEADER_CONFIG_CLIENT_INFO "enable config app client info with config header" ON)
+
+if (ENABLE_HEADER_CONFIG_CLIENT_INFO)
+        include(AppConfig.cmake)
+        set(KVS_SDK_ROOT "${PROJECT_SOURCE_DIR}/main/lib/amazon-kinesis-video-streams-webrtc-sdk-c")
+        configure_file(cmake_config_aws.h.in "${KVS_SDK_ROOT}/src/source/utils/cmake_config_aws.h")
+        configure_file(cmake_config_aws.c.in "${KVS_SDK_ROOT}/src/source/utils/cmake_config_aws.c")
+        add_definitions(-DENABLE_HEADER_CONFIG_CLIENT_INFO)
+endif()
 
 set(PLATFORM_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../../os/kernel/bsp"
                           "${CMAKE_SOURCE_DIR}/../../os/kernel/bsp/configs"
