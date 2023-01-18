@@ -33,7 +33,7 @@ STATUS app_metrics_setupFileLogging(PBOOL pEnable)
     BOOL enable = FALSE;
     // setup the file logging.
 
-    if (NULL != GETENV(ENABLE_FILE_LOGGING)) {
+    if (!strcmp("ON", GETENV(ENABLE_FILE_LOGGING))) {
         enable = TRUE;
     } else {
         CHK(FALSE, STATUS_SUCCESS);

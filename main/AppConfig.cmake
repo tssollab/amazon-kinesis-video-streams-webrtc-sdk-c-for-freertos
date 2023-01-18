@@ -14,6 +14,6 @@ set(CMake_AWS_IOT_CORE_CREDENTIAL_ENDPOINT     "\"c1n2srkjlj4jwd.credentials.iot
 set(CMake_AWS_IOT_CORE_CERT                    "\"/mnt/certifcate.pem.crt\"")
 set(CMake_AWS_IOT_CORE_PRIVATE_KEY             "\"/mnt/private.pem.key\"")
 set(CMake_AWS_IOT_CORE_ROLE_ALIAS              "\"AmKVSWebRTCIoTCredentialIAMRoleAlias\"")
-set(CMake_AWS_KVS_LOG_LEVEL                    "\"2\"")
+set(CMake_AWS_KVS_LOG_LEVEL                    "\"1\"")
 set(CMake_AWS_ENABLE_FILE_LOGGING              "\"OFF\"")
 set(CMake_AWS_DEBUG_LOG_SDP                    "\"OFF\"")

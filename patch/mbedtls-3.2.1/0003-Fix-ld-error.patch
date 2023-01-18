@@ -1,7 +1,7 @@
-From 1c8e8bd12370e79b481ff2ffbfafdd6abcf77605 Mon Sep 17 00:00:00 2001
+From 5bef14c8aabf184850f6d3912a937914c73b66eb Mon Sep 17 00:00:00 2001
 From: Lina Chen <chenln1124@thundersoft.com>
 Date: Fri, 6 Jan 2023 02:26:33 +0000
-Subject: [PATCH 3/3] Fix ld error.
+Subject: [PATCH 3/4] Fix ld error.
 
 ---
  include/mbedtls/mbedtls_config.h |   2 +-

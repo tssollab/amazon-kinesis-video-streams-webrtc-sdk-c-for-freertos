@@ -1,0 +1,352 @@
+From bbf5bc351f59a8892f3acc2bb9389ecde1431d6b Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Wed, 18 Jan 2023 08:32:34 +0000
+Subject: [PATCH 7/7] Enable mbedtls-2.16.6 on ankai platform
+
+---
+ src/include/kvs/platform_utils.h |  8 ++---
+ src/source/api_call/netio.c      | 14 ++++++++-
+ src/source/crypto/crypto.h       |  7 +++++
+ src/source/crypto/dtls_mbedtls.c | 52 ++++++++++++++++++++++++++++++++
+ src/source/crypto/tls_mbedtls.c  |  4 +++
+ src/source/utils/logger.c        | 20 +++++++++++-
+ 6 files changed, 99 insertions(+), 6 deletions(-)
+ mode change 100644 => 100755 src/include/kvs/platform_utils.h
+ mode change 100644 => 100755 src/source/utils/logger.c
+
+diff --git a/src/include/kvs/platform_utils.h b/src/include/kvs/platform_utils.h
+old mode 100644
+new mode 100755
+index e74f35b26..8b8313e67
+--- a/src/include/kvs/platform_utils.h
++++ b/src/include/kvs/platform_utils.h
+@@ -127,16 +127,16 @@ extern logPrintFunc globalCustomLogPrintFn;
+ #define DLOGV(fmt, ...) __LOG(LOG_LEVEL_VERBOSE, (PCHAR) LOG_CLASS, (PCHAR) fmt, ##__VA_ARGS__)
+ #endif
+ #ifndef ENTER
+-#define ENTER() DLOGV("Enter")
++#define ENTER() DLOGV("%s Enter", __func__)
+ #endif
+ #ifndef LEAVE
+-#define LEAVE() DLOGV("Leave")
++#define LEAVE() DLOGV("%s Leave", __func__)
+ #endif
+ #ifndef ENTERS
+-#define ENTERS() DLOGS("Enter")
++#define ENTERS() DLOGS("%s Enter", __func__)
+ #endif
+ #ifndef LEAVES
+-#define LEAVES() DLOGS("Leave")
++#define LEAVES() DLOGS("%s Leave", __func__)
+ #endif
+ 
+ #define DLOGD_LINE() DLOGD("%s(%d)", __func__, __LINE__)
+diff --git a/src/source/api_call/netio.c b/src/source/api_call/netio.c
+index 09c11f85e..4bb87764a 100755
+--- a/src/source/api_call/netio.c
++++ b/src/source/api_call/netio.c
+@@ -26,7 +26,9 @@
+ //#include "azure_c_shared_utility/xlogging.h"
+ #include "mbedtls/ctr_drbg.h"
+ #include "mbedtls/entropy.h"
+-// #include "mbedtls/net.h"
++#ifndef ENABLE_MBEDTLS_V3
++#include "mbedtls/net.h"
++#endif
+ #include "mbedtls/net_sockets.h"
+ 
+ /* Public headers */
+@@ -78,6 +80,7 @@ static int prvCreateX509Cert(NetIo_t* pxNet)
+     return xRes;
+ }
+ 
++#ifdef ENABLE_MBEDTLS_V3
+ static int mbedtls_test_rnd_std_rand( void *rng_state,
+                                       unsigned char *output,
+                                       size_t len )
+@@ -99,6 +102,7 @@ static int mbedtls_test_rnd_std_rand( void *rng_state,
+ 
+     return( 0 );
+ }
++#endif
+ 
+ static int prvInitConfig(NetIo_t* pxNet, const char* pcRootCA, const char* pcCert, const char* pcPrivKey, bool bFilePath)
+ {
+@@ -120,12 +124,20 @@ static int prvInitConfig(NetIo_t* pxNet, const char* pcRootCA, const char* pcCer
+                 if (bFilePath == false &&
+                     (mbedtls_x509_crt_parse(pxNet->pRootCA, (void*) pcRootCA, strlen(pcRootCA) + 1) != 0 ||
+                      mbedtls_x509_crt_parse(pxNet->pCert, (void*) pcCert, strlen(pcCert) + 1) != 0 ||
++#ifdef ENABLE_MBEDTLS_V3
+                      mbedtls_pk_parse_key(pxNet->pPrivKey, (void*) pcPrivKey, strlen(pcPrivKey) + 1, NULL, 0, mbedtls_test_rnd_std_rand, NULL) != 0)) {
++#else
++                     mbedtls_pk_parse_key(pxNet->pPrivKey, (void*) pcPrivKey, strlen(pcPrivKey) + 1, NULL, 0) != 0)) {
++#endif
+                     DLOGE("Failed to parse x509");
+                     xRes = STATUS_NULL_ARG;
+                 } else if (mbedtls_x509_crt_parse_file(pxNet->pRootCA, (void*) pcRootCA) != 0 ||
+                            mbedtls_x509_crt_parse_file(pxNet->pCert, (void*) pcCert) != 0 ||
++#ifdef ENABLE_MBEDTLS_V3
+                            mbedtls_pk_parse_keyfile(pxNet->pPrivKey, (void*) pcPrivKey, NULL, mbedtls_test_rnd_std_rand, NULL) != 0) {
++#else
++                           mbedtls_pk_parse_keyfile(pxNet->pPrivKey, (void*) pcPrivKey, NULL) != 0) {
++#endif
+                 } else {
+                     mbedtls_ssl_conf_authmode(&(pxNet->xConf), MBEDTLS_SSL_VERIFY_REQUIRED);
+                     mbedtls_ssl_conf_ca_chain(&(pxNet->xConf), pxNet->pRootCA, NULL);
+diff --git a/src/source/crypto/crypto.h b/src/source/crypto/crypto.h
+index c6c27d9eb..4af2a0f1c 100755
+--- a/src/source/crypto/crypto.h
++++ b/src/source/crypto/crypto.h
+@@ -30,8 +30,10 @@ extern "C" {
+ #include <mbedtls/sha256.h>
+ #include <mbedtls/md5.h>
+ #include <mbedtls/error.h>
++#ifdef ENABLE_MBEDTLS_V3
+ #include <mbedtls/compat-2.x.h>
+ #endif
++#endif
+ 
+ /******************************************************************************
+  * DEFINITIONS
+@@ -88,8 +90,13 @@ typedef enum {
+     } while (0)
+ 
+ typedef enum {
++#ifdef ENABLE_MBEDTLS_V3
+     KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_80 = MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_80,
+     KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_32 = MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_32,
++#else
++    KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_80 = MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_80,
++    KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_32 = MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_32,
++#endif
+ } KVS_SRTP_PROFILE;
+ #else
+ #error "A Crypto implementation is required."
+diff --git a/src/source/crypto/dtls_mbedtls.c b/src/source/crypto/dtls_mbedtls.c
+index e9d137a49..d2b81264b 100755
+--- a/src/source/crypto/dtls_mbedtls.c
++++ b/src/source/crypto/dtls_mbedtls.c
+@@ -6,9 +6,14 @@
+ 
+ /**  https://tools.ietf.org/html/rfc5764#section-4.1.2 */
+ mbedtls_ssl_srtp_profile DTLS_SRTP_SUPPORTED_PROFILES[] = {
++#ifdef ENABLE_MBEDTLS_V3
+     MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_80,
+     MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_32,
+     MBEDTLS_TLS_SRTP_UNSET,
++#else
++    MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_80,
++    MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_32,
++#endif
+ };
+ 
+ STATUS dtls_session_create(PDtlsSessionCallbacks pDtlsSessionCallbacks, TIMER_QUEUE_HANDLE timerQueueHandle, INT32 certificateBits,
+@@ -31,7 +36,9 @@ STATUS dtls_session_create(PDtlsSessionCallbacks pDtlsSessionCallbacks, TIMER_QU
+     mbedtls_ctr_drbg_init(&pDtlsSession->ctrDrbg);
+     mbedtls_ssl_config_init(&pDtlsSession->sslCtxConfig);
+     mbedtls_ssl_init(&pDtlsSession->sslCtx);
++#ifdef ENABLE_MBEDTLS_V3
+     mbedtls_ctr_drbg_set_prediction_resistance(&pDtlsSession->ctrDrbg, MBEDTLS_CTR_DRBG_PR_ON);
++#endif
+     CHK(mbedtls_ctr_drbg_seed(&pDtlsSession->ctrDrbg, mbedtls_entropy_func, &pDtlsSession->entropy, NULL, 0) == 0, STATUS_DTLS_CREATE_SSL_FAILED);
+ 
+     CHK_STATUS(io_buffer_create(DEFAULT_MTU_SIZE, &pDtlsSession->pReadBuffer));
+@@ -283,8 +290,15 @@ STATUS dtls_session_start(PDtlsSession pDtlsSession, BOOL isServer)
+         CHK(mbedtls_ssl_conf_own_cert(&pDtlsSession->sslCtxConfig, &pCertInfo->cert, &pCertInfo->privateKey) == 0, STATUS_DTLS_CREATE_SSL_FAILED);
+     }
+     mbedtls_ssl_conf_dtls_cookies(&pDtlsSession->sslCtxConfig, NULL, NULL, NULL);
++#ifdef ENABLE_MBEDTLS_V3
+     CHK(mbedtls_ssl_conf_dtls_srtp_protection_profiles(&pDtlsSession->sslCtxConfig, DTLS_SRTP_SUPPORTED_PROFILES) == 0, STATUS_DTLS_CREATE_SSL_FAILED);
+     mbedtls_ssl_set_export_keys_cb(&pDtlsSession->sslCtxConfig, (mbedtls_ssl_export_keys_t *)dtls_session_deriveKeyCallback, pDtlsSession);
++#else
++    CHK(mbedtls_ssl_conf_dtls_srtp_protection_profiles(&pDtlsSession->sslCtxConfig, DTLS_SRTP_SUPPORTED_PROFILES,
++                                                       ARRAY_SIZE(DTLS_SRTP_SUPPORTED_PROFILES)) == 0,
++        STATUS_DTLS_CREATE_SSL_FAILED);
++    mbedtls_ssl_conf_export_keys_ext_cb(&pDtlsSession->sslCtxConfig, (mbedtls_ssl_export_keys_ext_t*) dtls_session_deriveKeyCallback, pDtlsSession);
++#endif
+ 
+     CHK(mbedtls_ssl_setup(&pDtlsSession->sslCtx, &pDtlsSession->sslCtxConfig) == 0, STATUS_DTLS_SSL_CTX_CREATION_FAILED);
+     mbedtls_ssl_set_mtu(&pDtlsSession->sslCtx, DEFAULT_MTU_SIZE);
+@@ -362,7 +376,11 @@ STATUS dtls_session_read(PDtlsSession pDtlsSession, PBYTE pData, PINT32 pDataLen
+         }
+     }
+ 
++#ifdef ENABLE_MBEDTLS_V3
+     if (pDtlsSession->sslCtx.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER) {
++#else
++    if (pDtlsSession->sslCtx.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
++#endif
+         CHK_STATUS(dtls_session_changeState(pDtlsSession, RTC_DTLS_TRANSPORT_STATE_CONNECTED));
+     }
+ 
+@@ -479,7 +497,11 @@ STATUS dtls_session_populateKeyingMaterial(PDtlsSession pDtlsSession, PDtlsKeyin
+     BOOL locked = FALSE;
+     PTlsKeys pKeys;
+     BYTE keyingMaterialBuffer[MAX_SRTP_MASTER_KEY_LEN * 2 + MAX_SRTP_SALT_KEY_LEN * 2];
++#ifdef ENABLE_MBEDTLS_V3
+     mbedtls_dtls_srtp_info negotiatedSRTPProfile;
++#else
++    mbedtls_ssl_srtp_profile negotiatedSRTPProfile;
++#endif
+ 
+     CHK(pDtlsSession != NULL && pDtlsKeyingMaterial != NULL, STATUS_DTLS_NULL_ARG);
+     pKeys = &pDtlsSession->tlsKeys;
+@@ -504,6 +526,7 @@ STATUS dtls_session_populateKeyingMaterial(PDtlsSession pDtlsSession, PDtlsKeyin
+ 
+     MEMCPY(pDtlsKeyingMaterial->serverWriteKey + MAX_SRTP_MASTER_KEY_LEN, &keyingMaterialBuffer[offset], MAX_SRTP_SALT_KEY_LEN);
+ 
++#ifdef ENABLE_MBEDTLS_V3
+     mbedtls_ssl_get_dtls_srtp_negotiation_result(&pDtlsSession->sslCtx, &negotiatedSRTPProfile);
+     switch (negotiatedSRTPProfile.MBEDTLS_PRIVATE(chosen_dtls_srtp_profile)) {
+         case MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_80:
+@@ -515,6 +538,19 @@ STATUS dtls_session_populateKeyingMaterial(PDtlsSession pDtlsSession, PDtlsKeyin
+         default:
+             CHK(FALSE, STATUS_DTLS_UNKNOWN_SRTP_PROFILE);
+     }
++#else
++    negotiatedSRTPProfile = mbedtls_ssl_get_dtls_srtp_protection_profile(&pDtlsSession->sslCtx);
++    switch (negotiatedSRTPProfile) {
++        case MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_80:
++            pDtlsKeyingMaterial->srtpProfile = KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_80;
++            break;
++        case MBEDTLS_SRTP_AES128_CM_HMAC_SHA1_32:
++            pDtlsKeyingMaterial->srtpProfile = KVS_SRTP_PROFILE_AES128_CM_HMAC_SHA1_32;
++            break;
++        default:
++            CHK(FALSE, STATUS_DTLS_UNKNOWN_SRTP_PROFILE);
++    }
++#endif
+ 
+ CleanUp:
+     if (locked) {
+@@ -554,6 +590,7 @@ CleanUp:
+     return retStatus;
+ }
+ 
++#ifdef ENABLE_MBEDTLS_V3
+ static int mbedtls_test_rnd_std_rand( void *rng_state,
+                                       unsigned char *output,
+                                       size_t len )
+@@ -575,6 +612,7 @@ static int mbedtls_test_rnd_std_rand( void *rng_state,
+ 
+     return( 0 );
+ }
++#endif
+ 
+ STATUS certificate_key_copy(mbedtls_x509_crt* pCert, mbedtls_pk_context* pKey, PDtlsSessionCertificateInfo pDst)
+ {
+@@ -584,14 +622,22 @@ STATUS certificate_key_copy(mbedtls_x509_crt* pCert, mbedtls_pk_context* pKey, P
+     mbedtls_ecp_keypair *pSrcECP, *pDstECP;
+ 
+     CHK(pCert != NULL && pKey != NULL && pDst != NULL, STATUS_DTLS_NULL_ARG);
++#ifdef ENABLE_MBEDTLS_V3
+     CHK(mbedtls_pk_check_pair(&pCert->pk, pKey, mbedtls_test_rnd_std_rand, NULL) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++#else
++    CHK(mbedtls_pk_check_pair(&pCert->pk, pKey) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++#endif
+ 
+     mbedtls_x509_crt_init(&pDst->cert);
+     mbedtls_pk_init(&pDst->privateKey);
+     initialized = TRUE;
+ 
+     CHK(mbedtls_x509_crt_parse_der(&pDst->cert, pCert->raw.p, pCert->raw.len) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++#ifdef ENABLE_MBEDTLS_V3
+     CHK(mbedtls_pk_setup(&pDst->privateKey, pKey->MBEDTLS_PRIVATE(pk_info)) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++#else
++    CHK(mbedtls_pk_setup(&pDst->privateKey, pKey->pk_info) == 0, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++#endif
+ 
+     switch (mbedtls_pk_get_type(pKey)) {
+         case MBEDTLS_PK_RSA:
+@@ -601,9 +647,15 @@ STATUS certificate_key_copy(mbedtls_x509_crt* pCert, mbedtls_pk_context* pKey, P
+         case MBEDTLS_PK_ECDSA:
+             pSrcECP = mbedtls_pk_ec(*pKey);
+             pDstECP = mbedtls_pk_ec(pDst->privateKey);
++#ifdef ENABLE_MBEDTLS_V3
+             CHK(mbedtls_ecp_group_copy(&pDstECP->MBEDTLS_PRIVATE(grp), &pSrcECP->MBEDTLS_PRIVATE(grp)) == 0 && mbedtls_ecp_copy(&pDstECP->MBEDTLS_PRIVATE(Q), &pSrcECP->MBEDTLS_PRIVATE(Q)) == 0 &&
+                     mbedtls_mpi_copy(&pDstECP->MBEDTLS_PRIVATE(d), &pSrcECP->MBEDTLS_PRIVATE(d)) == 0,
+                 STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++#else
++            CHK(mbedtls_ecp_group_copy(&pDstECP->grp, &pSrcECP->grp) == 0 && mbedtls_ecp_copy(&pDstECP->Q, &pSrcECP->Q) == 0 &&
++                    mbedtls_mpi_copy(&pDstECP->d, &pSrcECP->d) == 0,
++                STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
++#endif
+             break;
+         default:
+             CHK(FALSE, STATUS_DTLS_CERTIFICATE_GENERATION_FAILED);
+diff --git a/src/source/crypto/tls_mbedtls.c b/src/source/crypto/tls_mbedtls.c
+index cba184f2f..a811e009a 100755
+--- a/src/source/crypto/tls_mbedtls.c
++++ b/src/source/crypto/tls_mbedtls.c
+@@ -175,7 +175,11 @@ STATUS tls_session_read(PTlsSession pTlsSession, PBYTE pData, UINT32 bufferLen,
+         }
+     }
+ 
++#ifdef ENABLE_MBEDTLS_V3
+     if (pTlsSession->sslCtx.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER) {
++#else
++    if (pTlsSession->sslCtx.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
++#endif
+         tls_session_changeState(pTlsSession, TLS_SESSION_STATE_CONNECTED);
+     }
+ 
+diff --git a/src/source/utils/logger.c b/src/source/utils/logger.c
+old mode 100644
+new mode 100755
+index 2af8a3c69..a1ecee067
+--- a/src/source/utils/logger.c
++++ b/src/source/utils/logger.c
+@@ -48,6 +48,7 @@ VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
+     CHAR timeString[MAX_TIMESTAMP_FORMAT_STR_LEN + 1 + 1];
+     STATUS retStatus = STATUS_SUCCESS;
+     UINT32 offset = 0;
++
+ #if 0
+ #ifdef ENABLE_LOG_THREAD_ID
+     // MAX_THREAD_ID_STR_LEN + null
+@@ -67,7 +68,10 @@ VOID addLogMetadata(PCHAR buffer, UINT32 bufferLen, PCHAR fmt, UINT32 logLevel)
+ #ifdef ENABLE_LOG_THREAD_ID
+     offset += SNPRINTF(buffer + offset, bufferLen - offset, "%s ", tidString);
+ #endif
++#else
++    offset = (UINT32) SNPRINTF(buffer, bufferLen, "[%-*s] ", MAX_LOG_LEVEL_STRLEN, getLogLevelStr(logLevel));
+ #endif
++
+     SNPRINTF(buffer + offset, bufferLen - offset, "%s\n", fmt);
+ }
+ 
+@@ -81,6 +85,7 @@ VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...)
+ {
+     PCHAR logFmtString = MEMALLOC(MAX_LOG_FORMAT_LENGTH + 1);
+     UINT32 logLevel = GET_LOGGER_LOG_LEVEL();
++    int slen;
+ 
+     UNUSED_PARAM(tag);
+ 
+@@ -98,9 +103,22 @@ VOID defaultLogPrint(UINT32 level, PCHAR tag, PCHAR fmt, ...)
+ 
+         va_list valist;
+         va_start(valist, fmt);
+-        vprintf(logFmtString, valist);
++        vsnprintf(logFmtString, MAX_LOG_FORMAT_LENGTH, fmt, valist);
+         va_end(valist);
++
++        slen = strlen(logFmtString);
++        for(int i = 0; i < slen; i++)
++        {
++            if(logFmtString[i] == '\n')
++            {
++                putch('\r');
++            }
++            putch(logFmtString[i]);
++        }
++        putch('\n');
++        putch('\r');
+     }
++
+     MEMFREE(logFmtString);
+     MUTEX_UNLOCK(logLock);
+ }
+-- 
+2.17.1
+

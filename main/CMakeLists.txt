@@ -1,5 +1,6 @@
 option(ENABLE_STREAMING "enable the streaming" ON)
-option(ENABLE_DATA_CHANNEL "enable the data channel" ON)
+option(ENABLE_DATA_CHANNEL "enable the data channel" OFF)
+option(ENABLE_MBEDTLS_V3 "enable mbedtls version 3.2.1" OFF)
 option(ENABLE_HEADER_CONFIG_CLIENT_INFO "enable config app client info with config header" ON)
 
 if (ENABLE_HEADER_CONFIG_CLIENT_INFO)
@@ -130,7 +131,13 @@ target_link_libraries(${COMPONENT_LIB} PUBLIC wslay)
 set(KVS_LIBWSLAY_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/wslay/lib/includes" "${LIB_SOURCE_DIR}/wslay/lib/includes")
 
 message("############################## start mbedtls ##############################")
-add_subdirectory(lib/mbedtls)
+if(ENABLE_MBEDTLS_V3)
+    set(MBEDTLS_VERSION "3.2.1")
+    add_definitions(-DENABLE_MBEDTLS_V3)
+else()
+    set(MBEDTLS_VERSION "2.16.6")
+endif()
+add_subdirectory(lib/mbedtls-${MBEDTLS_VERSION})
 set_property(TARGET mbedtls APPEND PROPERTY LINK_LIBRARIES
         ${nvs_flash_lib}
         ${mbedtls_lib})
@@ -138,7 +145,7 @@ set_property(TARGET mbedtls APPEND PROPERTY INTERFACE_LINK_LIBRARIES
         ${nvs_flash_lib}
         ${mbedtls_lib})
 target_link_libraries(${COMPONENT_LIB} PUBLIC mbedtls)
-set(KVS_LIBMBEDTLS_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/mbedtls/lib/includes" "${LIB_SOURCE_DIR}/mbedtls/include")
+set(KVS_LIBMBEDTLS_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/mbedtls-${MBEDTLS_VERSION}/lib/includes" "${LIB_SOURCE_DIR}/mbedtls-${MBEDTLS_VERSION}/include")
 set(MBEDTLS_INCLUDE_DIRS "${KVS_LIBMBEDTLS_INCLUDE_DIRS}")
 
 if(ENABLE_STREAMING)
