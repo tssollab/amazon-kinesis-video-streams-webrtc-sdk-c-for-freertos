@@ -1,7 +1,7 @@
-From bbf5bc351f59a8892f3acc2bb9389ecde1431d6b Mon Sep 17 00:00:00 2001
+From 782a078a51b8c30c799fe3ca17e049ef56345960 Mon Sep 17 00:00:00 2001
 From: Lina Chen <chenln1124@thundersoft.com>
 Date: Wed, 18 Jan 2023 08:32:34 +0000
-Subject: [PATCH 7/7] Enable mbedtls-2.16.6 on ankai platform
+Subject: [PATCH 7/8] Enable mbedtls-2.16.6 on ankai platform
 
 ---
  src/include/kvs/platform_utils.h |  8 ++---

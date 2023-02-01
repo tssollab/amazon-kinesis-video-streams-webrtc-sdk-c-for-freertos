@@ -1,0 +1,56 @@
+From 65865495f3f92bc79b0d29bdf1f9f415b23f65a5 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Wed, 1 Feb 2023 03:57:36 +0000
+Subject: [PATCH 2/2] Enable select on ankai platform.
+
+---
+ library/net_sockets.c | 2 +-
+ library/ssl_srv.c     | 2 +-
+ library/ssl_tls.c     | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/library/net_sockets.c b/library/net_sockets.c
+index 87f9435fe..20637cf3f 100755
+--- a/library/net_sockets.c
++++ b/library/net_sockets.c
+@@ -22,7 +22,7 @@
+ /* Enable definition of getaddrinfo() even when compiling with -std=c99. Must
+  * be set before config.h, which pulls in glibc's features.h indirectly.
+  * Harmless on other platforms. */
+-#define _POSIX_C_SOURCE 200112L
++// #define _POSIX_C_SOURCE 200112L
+ 
+ #if !defined(MBEDTLS_CONFIG_FILE)
+ #include "mbedtls/config.h"
+diff --git a/library/ssl_srv.c b/library/ssl_srv.c
+index 69cad25c6..74c8130c0 100755
+--- a/library/ssl_srv.c
++++ b/library/ssl_srv.c
+@@ -2446,7 +2446,7 @@ static void ssl_write_alpn_ext( mbedtls_ssl_context *ssl,
+ }
+ #endif /* MBEDTLS_ECDH_C || MBEDTLS_ECDSA_C */
+ 
+-#if defined(MBEDTLS_SSL_DTLS_SRTP ) 
++#if defined(MBEDTLS_SSL_DTLS_SRTP)
+ static void ssl_write_use_srtp_ext( mbedtls_ssl_context *ssl,
+                                     unsigned char *buf,
+                                     size_t *olen )
+diff --git a/library/ssl_tls.c b/library/ssl_tls.c
+index 5b3a022bf..c2414ca5a 100755
+--- a/library/ssl_tls.c
++++ b/library/ssl_tls.c
+@@ -1146,9 +1146,9 @@ int mbedtls_ssl_derive_keys( mbedtls_ssl_context *ssl )
+     if( ssl->conf->f_export_keys_ext != NULL )
+     {
+         ssl->conf->f_export_keys_ext( ssl->conf->p_export_keys,
+-                                      session->master, 
++                                      session->master,
+                                       keyblk,
+-                                      mac_key_len, 
++                                      mac_key_len,
+                                       transform->keylen,
+                                       iv_copy_len,
+                                       handshake->randbytes + 32,
+-- 
+2.17.1
+

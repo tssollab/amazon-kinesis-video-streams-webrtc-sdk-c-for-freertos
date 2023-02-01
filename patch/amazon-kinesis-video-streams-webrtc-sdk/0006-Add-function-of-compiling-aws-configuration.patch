@@ -1,7 +1,7 @@
-From cfc186fc5586acf40b2b43d2b9028d83981a721f Mon Sep 17 00:00:00 2001
+From 1d6d410aa9f00a374931f6081359aa103f54faf3 Mon Sep 17 00:00:00 2001
 From: Kevin <zhaoyl0704@thundersoft.com>
 Date: Wed, 18 Jan 2023 13:57:26 +0800
-Subject: [PATCH 6/7] Add function of compiling aws configuration
+Subject: [PATCH 6/8] Add function of compiling aws configuration
 
 ---
  src/include/kvs/common_defs.h | 5 +++++

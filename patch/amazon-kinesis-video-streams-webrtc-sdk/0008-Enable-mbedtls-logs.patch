@@ -1,0 +1,376 @@
+From 36387c19fe1a38ccd1ee184bb085f03faa5edac9 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Wed, 1 Feb 2023 04:04:23 +0000
+Subject: [PATCH 8/8] Enable mbedtls logs.
+
+---
+ CMakeLists.txt                             |  3 +++
+ src/include/kvs/platform_utils.h           |  8 ++++----
+ src/source/PeerConnection/DataChannel.c    |  8 ++++----
+ src/source/PeerConnection/PeerConnection.c |  8 ++++----
+ src/source/api_call/http_api_rsp.c         |  4 ++--
+ src/source/api_call/netio.c                | 13 +++++++++++++
+ src/source/api_call/wss_api.c              |  4 ++--
+ src/source/api_call/wss_api_rsp.c          |  4 ++--
+ src/source/api_call/wss_client.c           |  4 ++--
+ src/source/crypto/dtls_mbedtls.c           | 14 ++++++++++++++
+ src/source/crypto/tls_mbedtls.c            | 14 ++++++++++++++
+ src/source/ice/ice_agent.c                 |  4 ++--
+ src/source/ice/ice_agent_fsm.c             |  4 ++--
+ src/source/signaling/signaling.c           |  8 ++++----
+ src/source/signaling/signaling_fsm.c       | 14 ++++++++------
+ 15 files changed, 80 insertions(+), 34 deletions(-)
+ mode change 100644 => 100755 src/source/PeerConnection/DataChannel.c
+ mode change 100644 => 100755 src/source/PeerConnection/PeerConnection.c
+ mode change 100644 => 100755 src/source/api_call/http_api_rsp.c
+ mode change 100644 => 100755 src/source/api_call/wss_api.c
+ mode change 100644 => 100755 src/source/api_call/wss_api_rsp.c
+ mode change 100644 => 100755 src/source/api_call/wss_client.c
+ mode change 100644 => 100755 src/source/ice/ice_agent.c
+ mode change 100644 => 100755 src/source/ice/ice_agent_fsm.c
+ mode change 100644 => 100755 src/source/signaling/signaling.c
+ mode change 100644 => 100755 src/source/signaling/signaling_fsm.c
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c0997b18a..db3863572 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -269,6 +269,9 @@ endif()
+ # Uncomment below line for very verbose logging
+ # add_definitions(-DLOG_STREAMING)
+ 
++# Uncomment below line for mbedtls debug log
++# add_definitions(-DMBEDTLS_DEBUG_LOG)
++
+ if(BUILD_CLIENT)
+   add_definitions(-DBUILD_CLIENT)
+ endif()
+diff --git a/src/include/kvs/platform_utils.h b/src/include/kvs/platform_utils.h
+index 8b8313e67..ff924b223 100755
+--- a/src/include/kvs/platform_utils.h
++++ b/src/include/kvs/platform_utils.h
+@@ -127,16 +127,16 @@ extern logPrintFunc globalCustomLogPrintFn;
+ #define DLOGV(fmt, ...) __LOG(LOG_LEVEL_VERBOSE, (PCHAR) LOG_CLASS, (PCHAR) fmt, ##__VA_ARGS__)
+ #endif
+ #ifndef ENTER
+-#define ENTER() DLOGV("%s Enter", __func__)
++#define ENTER() DLOGV("%s(%d) Enter", __func__, __LINE__)
+ #endif
+ #ifndef LEAVE
+-#define LEAVE() DLOGV("%s Leave", __func__)
++#define LEAVE() DLOGV("%s(%d) Leave", __func__, __LINE__)
+ #endif
+ #ifndef ENTERS
+-#define ENTERS() DLOGS("%s Enter", __func__)
++#define ENTERS() DLOGS("%s(%d) Enter", __func__, __LINE__)
+ #endif
+ #ifndef LEAVES
+-#define LEAVES() DLOGS("%s Leave", __func__)
++#define LEAVES() DLOGS("%s(%d) Leave", __func__, __LINE__)
+ #endif
+ 
+ #define DLOGD_LINE() DLOGD("%s(%d)", __func__, __LINE__)
+diff --git a/src/source/PeerConnection/DataChannel.c b/src/source/PeerConnection/DataChannel.c
+old mode 100644
+new mode 100755
+index 12540cb57..f884a24f9
+--- a/src/source/PeerConnection/DataChannel.c
++++ b/src/source/PeerConnection/DataChannel.c
+@@ -26,10 +26,10 @@
+ /******************************************************************************
+  * DEFINITIONS
+  ******************************************************************************/
+-#define DATA_ENTER()  // ENTER()
+-#define DATA_LEAVE()  // LEAVE()
+-#define DATA_ENTERS() // ENTERS()
+-#define DATA_LEAVES() // LEAVES()
++#define DATA_ENTER()   // ENTER()
++#define DATA_LEAVE()   // LEAVE()
++#define DATA_ENTERS()  // ENTERS()
++#define DATA_LEAVES()  // LEAVES()
+ 
+ /******************************************************************************
+  * FUNCTIONS
+diff --git a/src/source/PeerConnection/PeerConnection.c b/src/source/PeerConnection/PeerConnection.c
+old mode 100644
+new mode 100755
+index 7f05e6a65..34d5077bc
+--- a/src/source/PeerConnection/PeerConnection.c
++++ b/src/source/PeerConnection/PeerConnection.c
+@@ -39,10 +39,10 @@
+ /******************************************************************************
+  * DEFINITIONS
+  ******************************************************************************/
+-#define PC_ENTER()  // ENTER()
+-#define PC_LEAVE()  // LEAVE()
+-#define PC_ENTERS() // ENTERS()
+-#define PC_LEAVES() // LEAVES()
++#define PC_ENTER()   // ENTER()
++#define PC_LEAVE()   // LEAVE()
++#define PC_ENTERS()  // ENTERS()
++#define PC_LEAVES()  // LEAVES()
+ 
+ static volatile ATOMIC_BOOL gKvsWebRtcInitialized = (SIZE_T) FALSE;
+ 
+diff --git a/src/source/api_call/http_api_rsp.c b/src/source/api_call/http_api_rsp.c
+old mode 100644
+new mode 100755
+index 656d18125..6f482f4f9
+--- a/src/source/api_call/http_api_rsp.c
++++ b/src/source/api_call/http_api_rsp.c
+@@ -20,8 +20,8 @@
+ #include "channel_info.h"
+ #include "auth.h"
+ 
+-#define HTTP_RSP_ENTER() // DLOGD("enter")
+-#define HTTP_RSP_EXIT()  // DLOGD("exit")
++#define HTTP_RSP_ENTER()  // DLOGD("%s(%d) enter", __func__, __LINE__)
++#define HTTP_RSP_EXIT()   // DLOGD("%s(%d) exit", __func__, __LINE__)
+ 
+ /******************************************************************************
+  * FUNCTION
+diff --git a/src/source/api_call/netio.c b/src/source/api_call/netio.c
+index 4bb87764a..cd3944e21 100755
+--- a/src/source/api_call/netio.c
++++ b/src/source/api_call/netio.c
+@@ -190,6 +190,14 @@ static int prvConnect(NetIo_t* pxNet, const char* pcHost, const char* pcPort, co
+     return xRes;
+ }
+ 
++#ifdef MBEDTLS_DEBUG_LOG
++static void ssl_debug(void *ctx, int level, const char *file, int line, const char *str)
++{
++    printf("%s: %d, %s.\n", file, line, str);
++    return;
++}
++#endif
++
+ NetIoHandle NetIo_create(void)
+ {
+     NetIo_t* pxNet = NULL;
+@@ -203,6 +211,11 @@ NetIoHandle NetIo_create(void)
+         mbedtls_ctr_drbg_init(&(pxNet->xCtrDrbg));
+         mbedtls_entropy_init(&(pxNet->xEntropy));
+ 
++#ifdef MBEDTLS_DEBUG_LOG
++        mbedtls_debug_set_threshold(4);
++        mbedtls_ssl_conf_dbg(&(pxNet->xConf), ssl_debug, NULL);
++#endif
++
+         pxNet->uRecvTimeoutMs = DEFAULT_CONNECTION_TIMEOUT_MS;
+         pxNet->uSendTimeoutMs = DEFAULT_CONNECTION_TIMEOUT_MS;
+ 
+diff --git a/src/source/api_call/wss_api.c b/src/source/api_call/wss_api.c
+old mode 100644
+new mode 100755
+index 421203451..d723e225e
+--- a/src/source/api_call/wss_api.c
++++ b/src/source/api_call/wss_api.c
+@@ -27,8 +27,8 @@
+ /******************************************************************************
+  * DEFINITION
+  ******************************************************************************/
+-#define WSS_API_ENTER() // DLOGD("%s enter", __func__);
+-#define WSS_API_EXIT()  // DLOGD("%s exit", __func__);
++#define WSS_API_ENTER()  // DLOGD("%s(%d) enter", __func__, __LINE__);
++#define WSS_API_EXIT()   // DLOGD("%s(%d) exit", __func__, __LINE__);
+ 
+ #define WSS_API_SECURE_PORT                "443"
+ #define WSS_API_CONNECTION_TIMEOUT         (2 * HUNDREDS_OF_NANOS_IN_A_SECOND)
+diff --git a/src/source/api_call/wss_api_rsp.c b/src/source/api_call/wss_api_rsp.c
+old mode 100644
+new mode 100755
+index b8b57552d..8711402e6
+--- a/src/source/api_call/wss_api_rsp.c
++++ b/src/source/api_call/wss_api_rsp.c
+@@ -22,8 +22,8 @@
+ /******************************************************************************
+  * DEFINITION
+  ******************************************************************************/
+-#define WSS_RSP_ENTER() // DLOGD("enter")
+-#define WSS_RSP_EXIT()  // DLOGD("exit")
++#define WSS_RSP_ENTER()  // DLOGD("%s(%d) enter", __func__, __LINE__)
++#define WSS_RSP_EXIT()   // DLOGD("%s(%d) exit", __func__, __LINE__)
+ 
+ /******************************************************************************
+  * FUNCTIONS
+diff --git a/src/source/api_call/wss_client.c b/src/source/api_call/wss_client.c
+old mode 100644
+new mode 100755
+index 6fffc952f..1c2cb36f3
+--- a/src/source/api_call/wss_client.c
++++ b/src/source/api_call/wss_client.c
+@@ -32,8 +32,8 @@
+ /******************************************************************************
+  * DEFINITIONS
+  ******************************************************************************/
+-#define WSS_CLIENT_ENTER() // DLOGD("%s(%d) enter", __func__, __LINE__)
+-#define WSS_CLIENT_EXIT()  // DLOGD("%s(%d) exit", __func__, __LINE__);
++#define WSS_CLIENT_ENTER()  // DLOGD("%s(%d) enter", __func__, __LINE__)
++#define WSS_CLIENT_EXIT()   // DLOGD("%s(%d) exit", __func__, __LINE__);
+ 
+ #define IO_LOCK(pWssClientCtx)   MUTEX_LOCK(pWssClientCtx->ioLock)
+ #define IO_UNLOCK(pWssClientCtx) MUTEX_UNLOCK(pWssClientCtx->ioLock)
+diff --git a/src/source/crypto/dtls_mbedtls.c b/src/source/crypto/dtls_mbedtls.c
+index d2b81264b..ef1b153cf 100755
+--- a/src/source/crypto/dtls_mbedtls.c
++++ b/src/source/crypto/dtls_mbedtls.c
+@@ -16,6 +16,14 @@ mbedtls_ssl_srtp_profile DTLS_SRTP_SUPPORTED_PROFILES[] = {
+ #endif
+ };
+ 
++#ifdef MBEDTLS_DEBUG_LOG
++static void ssl_debug(void *ctx, int level, const char *file, int line, const char *str)
++{
++    printf("%s: %d, %s.\n", file, line, str);
++    return;
++}
++#endif
++
+ STATUS dtls_session_create(PDtlsSessionCallbacks pDtlsSessionCallbacks, TIMER_QUEUE_HANDLE timerQueueHandle, INT32 certificateBits,
+                            BOOL generateRSACertificate, PRtcCertificate pRtcCertificates, PDtlsSession* ppDtlsSession)
+ {
+@@ -36,6 +44,12 @@ STATUS dtls_session_create(PDtlsSessionCallbacks pDtlsSessionCallbacks, TIMER_QU
+     mbedtls_ctr_drbg_init(&pDtlsSession->ctrDrbg);
+     mbedtls_ssl_config_init(&pDtlsSession->sslCtxConfig);
+     mbedtls_ssl_init(&pDtlsSession->sslCtx);
++
++#ifdef MBEDTLS_DEBUG_LOG
++    mbedtls_debug_set_threshold(4);
++    mbedtls_ssl_conf_dbg(&pDtlsSession->sslCtxConfig, ssl_debug, NULL);
++#endif
++
+ #ifdef ENABLE_MBEDTLS_V3
+     mbedtls_ctr_drbg_set_prediction_resistance(&pDtlsSession->ctrDrbg, MBEDTLS_CTR_DRBG_PR_ON);
+ #endif
+diff --git a/src/source/crypto/tls_mbedtls.c b/src/source/crypto/tls_mbedtls.c
+index a811e009a..ec35f6891 100755
+--- a/src/source/crypto/tls_mbedtls.c
++++ b/src/source/crypto/tls_mbedtls.c
+@@ -6,6 +6,14 @@
+ #include "io_buffer.h"
+ #include "Rtp.h"
+ 
++#ifdef MBEDTLS_DEBUG_LOG
++static void ssl_debug(void *ctx, int level, const char *file, int line, const char *str)
++{
++    printf("%s: %d, %s.\n", file, line, str);
++    return;
++}
++#endif
++
+ STATUS tls_session_create(PTlsSessionCallbacks pCallbacks, PTlsSession* ppTlsSession)
+ {
+     ENTERS();
+@@ -27,6 +35,12 @@ STATUS tls_session_create(PTlsSessionCallbacks pCallbacks, PTlsSession* ppTlsSes
+     mbedtls_x509_crt_init(&pTlsSession->cacert);
+     mbedtls_ssl_config_init(&pTlsSession->sslCtxConfig);
+     mbedtls_ssl_init(&pTlsSession->sslCtx);
++
++#ifdef MBEDTLS_DEBUG_LOG
++    mbedtls_debug_set_threshold(4);
++    mbedtls_ssl_conf_dbg(&pTlsSession->sslCtxConfig, ssl_debug, NULL);
++#endif
++
+     CHK(mbedtls_ctr_drbg_seed(&pTlsSession->ctrDrbg, mbedtls_entropy_func, &pTlsSession->entropy, NULL, 0) == 0, STATUS_TLS_CREATE_SSL_FAILED);
+     CHK(mbedtls_x509_crt_parse_file(&pTlsSession->cacert, DEFAULT_KVS_CACERT_PATH) == 0, STATUS_TLS_INVALID_CA_CERT_PATH);
+ 
+diff --git a/src/source/ice/ice_agent.c b/src/source/ice/ice_agent.c
+old mode 100644
+new mode 100755
+index 6f53f198c..679f540f4
+--- a/src/source/ice/ice_agent.c
++++ b/src/source/ice/ice_agent.c
+@@ -31,8 +31,8 @@
+ /******************************************************************************
+  * DEFINITIONS
+  ******************************************************************************/
+-#define ICE_AGENT_ENTRY() ENTERS()
+-#define ICE_AGENT_LEAVE() LEAVES()
++#define ICE_AGENT_ENTRY() // ENTERS()
++#define ICE_AGENT_LEAVE() // LEAVES()
+ 
+ // https://developer.mozilla.org/en-US/docs/Web/API/RTCIceCandidate/candidate
+ // https://tools.ietf.org/html/rfc5245#section-15.1
+diff --git a/src/source/ice/ice_agent_fsm.c b/src/source/ice/ice_agent_fsm.c
+old mode 100644
+new mode 100755
+index b07d63a6a..ab55730b1
+--- a/src/source/ice/ice_agent_fsm.c
++++ b/src/source/ice/ice_agent_fsm.c
+@@ -23,8 +23,8 @@
+ /******************************************************************************
+  * DEFINITIONS
+  ******************************************************************************/
+-#define ICE_FSM_ENTER() // DLOGD("%s enter", __func__);
+-#define ICE_FSM_LEAVE() // DLOGD("%s leave", __func__);
++#define ICE_FSM_ENTER()  // DLOGD("%s(%d) enter", __func__, __LINE__);
++#define ICE_FSM_LEAVE()  // DLOGD("%s(%d) leave", __func__, __LINE__);
+ 
+ /******************************************************************************
+  * FUNCTIONS
+diff --git a/src/source/signaling/signaling.c b/src/source/signaling/signaling.c
+old mode 100644
+new mode 100755
+index 4948c7305..bc508629d
+--- a/src/source/signaling/signaling.c
++++ b/src/source/signaling/signaling.c
+@@ -30,10 +30,10 @@
+ /******************************************************************************
+  * DEFINITION
+  ******************************************************************************/
+-#define SIGNALING_ENTER()  // ENTER()
+-#define SIGNALING_LEAVE()  // LEAVE()
+-#define SIGNALING_ENTERS() // ENTERS()
+-#define SIGNALING_LEAVES() // LEAVES()
++#define SIGNALING_ENTER()   // ENTER()
++#define SIGNALING_LEAVE()   // LEAVE()
++#define SIGNALING_ENTERS()  // ENTERS()
++#define SIGNALING_LEAVES()  // LEAVES()
+ 
+ /******************************************************************************
+  * INTERNAL FUNCTION PROTOTYPE
+diff --git a/src/source/signaling/signaling_fsm.c b/src/source/signaling/signaling_fsm.c
+old mode 100644
+new mode 100755
+index 526ba6168..310462cc9
+--- a/src/source/signaling/signaling_fsm.c
++++ b/src/source/signaling/signaling_fsm.c
+@@ -22,10 +22,10 @@
+ /******************************************************************************
+  * DEFINITION
+  ******************************************************************************/
+-#define SIGNALING_FSM_ENTER()  // DLOGD("%s enter", __func__)
+-#define SIGNALING_FSM_LEAVE()  // DLOGD("%s leave", __func__)
+-#define SIGNALING_FSM_ENTERS() // DLOGD("%s enters", __func__)
+-#define SIGNALING_FSM_LEAVES() // DLOGD("%s leaves", __func__)
++#define SIGNALING_FSM_ENTER()   // DLOGD("%s(%d) enter", __func__, __LINE__)
++#define SIGNALING_FSM_LEAVE()   // DLOGD("%s(%d) leave", __func__, __LINE__)
++#define SIGNALING_FSM_ENTERS()  // DLOGD("%s(%d) enters", __func__, __LINE__)
++#define SIGNALING_FSM_LEAVES()  // DLOGD("%s(%d) leaves", __func__, __LINE__)
+ 
+ #define SIGNALING_STATE_NEW_REQUIRED (SIGNALING_STATE_NONE | SIGNALING_STATE_NEW)
+ #define SIGNALING_STATE_GET_TOKEN_REQUIRED                                                                                                           \
+@@ -829,7 +829,8 @@ STATUS signaling_fsm_step(PSignalingClient pSignalingClient, STATUS status)
+     // Check for a shutdown
+     CHK(!ATOMIC_LOAD_BOOL(&pSignalingClient->shutdown), retStatus);
+ 
+-    MUTEX_LOCK(pSignalingClient->nestedFsmLock);
++    // printf("%s: %d, call MUTEX_LOCK(pSignalingClient->nestedFsmLock)\n", __func__, __LINE__);
++    // MUTEX_LOCK(pSignalingClient->nestedFsmLock);
+     locked = TRUE;
+ 
+     // Check if an error and the retry is OK
+@@ -863,7 +864,8 @@ STATUS signaling_fsm_step(PSignalingClient pSignalingClient, STATUS status)
+ CleanUp:
+ 
+     if (locked) {
+-        MUTEX_UNLOCK(pSignalingClient->nestedFsmLock);
++        // printf("%s: %d, call MUTEX_UNLOCK(pSignalingClient->nestedFsmLock)\n", __func__, __LINE__);
++        // MUTEX_UNLOCK(pSignalingClient->nestedFsmLock);
+     }
+ 
+     SIGNALING_FSM_LEAVES();
+-- 
+2.17.1
+

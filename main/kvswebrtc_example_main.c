@@ -13,7 +13,7 @@
 #include <stdlib.h>
 
 #include "AppMain.h"
-#include "AppMediaSrc_ESP32_FileSrc.h"
+#include "AppMediaSrc_FileSrc.h"
 
 #include "kernel.h"
 #include "netdev_ipaddr.h"

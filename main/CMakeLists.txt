@@ -65,7 +65,7 @@ add_library(${COMPONENT_LIB} STATIC kvswebrtc_example_main.c
                                     AppCommon.c
                                     AppCredential.c
                                     AppDataChannel.c
-                                    AppMediaSrc_ESP32_FileSrc.c
+                                    AppMediaSrc_FileSrc.c
                                     AppMain.c
                                     AppMessageQueue.c
                                     AppMetrics.c

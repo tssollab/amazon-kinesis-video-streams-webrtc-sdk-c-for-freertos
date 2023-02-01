@@ -1,0 +1,35 @@
+From 84d8b3d6eb2f14150ffe366f9e53ef339427b280 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Wed, 1 Feb 2023 04:00:45 +0000
+Subject: [PATCH 5/5] Enable select on ankai platform.
+
+---
+ library/net_sockets.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/library/net_sockets.c b/library/net_sockets.c
+index 486af6ff7..ca102ad9b 100755
+--- a/library/net_sockets.c
++++ b/library/net_sockets.c
+@@ -20,12 +20,12 @@
+ /* Enable definition of getaddrinfo() even when compiling with -std=c99. Must
+  * be set before mbedtls_config.h, which pulls in glibc's features.h indirectly.
+  * Harmless on other platforms. */
+-#ifndef _POSIX_C_SOURCE
+-#define _POSIX_C_SOURCE 200112L
+-#endif
+-#ifndef _XOPEN_SOURCE
+-#define _XOPEN_SOURCE 600 /* sockaddr_storage */
+-#endif
++// #ifndef _POSIX_C_SOURCE
++// #define _POSIX_C_SOURCE 200112L
++// #endif
++// #ifndef _XOPEN_SOURCE
++// #define _XOPEN_SOURCE 600 /* sockaddr_storage */
++// #endif
+ 
+ #include "common.h"
+ 
+-- 
+2.17.1
+

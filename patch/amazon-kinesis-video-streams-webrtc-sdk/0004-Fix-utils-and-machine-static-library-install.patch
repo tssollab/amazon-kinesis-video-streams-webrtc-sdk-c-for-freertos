@@ -1,7 +1,7 @@
-From fa1c74d5d77f46afafcc0de285b60d28fd3db4a2 Mon Sep 17 00:00:00 2001
+From 5571d5df2356464bfa815031bafa6dd47229d76e Mon Sep 17 00:00:00 2001
 From: Lina Chen <chenln1124@thundersoft.com>
 Date: Fri, 6 Jan 2023 08:34:08 +0000
-Subject: [PATCH 4/7] Fix utils and machine static library install.
+Subject: [PATCH 4/8] Fix utils and machine static library install.
 
 ---
  CMakeLists.txt | 2 +-

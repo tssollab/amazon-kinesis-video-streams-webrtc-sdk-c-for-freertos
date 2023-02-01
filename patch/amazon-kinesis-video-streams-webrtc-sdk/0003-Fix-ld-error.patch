@@ -1,7 +1,7 @@
-From f17b5d4ffdffcedde366b0f891356d619a88ba2d Mon Sep 17 00:00:00 2001
+From 87bfedca8a3bbc7f184ec157fa6e00767ce5d359 Mon Sep 17 00:00:00 2001
 From: Lina Chen <chenln1124@thundersoft.com>
 Date: Fri, 6 Jan 2023 02:24:27 +0000
-Subject: [PATCH 3/7] Fix ld error.
+Subject: [PATCH 3/8] Fix ld error.
 
 ---
  CMakeLists.txt                |  7 +++++++

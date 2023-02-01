@@ -13,7 +13,7 @@
  * permissions and limitations under the License.
  */
 #define LOG_CLASS "AppFileSrc"
-#include "AppMediaSrc_ESP32_FileSrc.h"
+#include "AppMediaSrc_FileSrc.h"
 #include "AppCommon.h"
 #include "fileio.h"
 
