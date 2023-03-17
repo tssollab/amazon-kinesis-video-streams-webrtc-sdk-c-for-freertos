@@ -1,0 +1,69 @@
+From 433513f1243a4aee7c66a0c2a42c4c01667be0d1 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Fri, 17 Mar 2023 05:38:45 +0000
+Subject: [PATCH 2/2] Enable build on anyke platform.
+
+---
+ CMakeLists.txt     | 20 ++++++++++----------
+ lib/CMakeLists.txt |  6 +++---
+ 2 files changed, 13 insertions(+), 13 deletions(-)
+ mode change 100644 => 100755 CMakeLists.txt
+ mode change 100644 => 100755 lib/CMakeLists.txt
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+old mode 100644
+new mode 100755
+index 9d5320b..ff7ea73
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -14,7 +14,7 @@ project(wslay)
+ 
+ option(WSLAY_CONFIGURE_INSTALL "Generate install target" ON)
+ option(WSLAY_STATIC "Build static version of the library" ON)
+-option(WSLAY_SHARED "Build shared version of the library" ON)
++option(WSLAY_SHARED "Build shared version of the library" OFF)
+ option(WSLAY_EXAMPLES "Build examples" OFF)
+ option(WSLAY_TESTS "Build tests" OFF)
+ 
+@@ -27,12 +27,12 @@ if(WSLAY_TESTS)
+ 	add_subdirectory(tests)
+ endif()
+ 
+-if (WSLAY_CONFIGURE_INSTALL)
+-	include(GNUInstallDirs)
+-	set(INSTALL_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/wslay)
+-	install(TARGETS wslay
+-		DESTINATION ${INSTALL_CMAKE_DIR})
+-	configure_file(wslay-config.cmake.in wslay-config.cmake @ONLY)
+-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/wslay-config.cmake
+-		DESTINATION ${INSTALL_CMAKE_DIR})
+-endif()
++# if (WSLAY_CONFIGURE_INSTALL)
++# 	include(GNUInstallDirs)
++# 	set(INSTALL_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/wslay)
++# 	install(TARGETS wslay
++# 		DESTINATION ${INSTALL_CMAKE_DIR})
++	# configure_file(wslay-config.cmake.in wslay-config.cmake @ONLY)
++	# install(FILES ${CMAKE_CURRENT_BINARY_DIR}/wslay-config.cmake
++	# 	DESTINATION ${INSTALL_CMAKE_DIR})
++# endif()
+diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
+old mode 100644
+new mode 100755
+index ba24310..9ce6e0f
+--- a/lib/CMakeLists.txt
++++ b/lib/CMakeLists.txt
+@@ -60,7 +60,7 @@ if(WSLAY_CONFIGURE_INSTALL)
+ 		INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+ 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+ 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+-	install(DIRECTORY ${INCLUDE_DIR}/ ${GEN_INCLUDE_DIR}/
+-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+-		FILES_MATCHING PATTERN "*.h")
++	#install(DIRECTORY ${INCLUDE_DIR}/ ${GEN_INCLUDE_DIR}/
++	#	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
++	#	FILES_MATCHING PATTERN "*.h")
+ endif()
+-- 
+2.17.1
+

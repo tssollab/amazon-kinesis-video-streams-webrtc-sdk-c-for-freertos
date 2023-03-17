@@ -43,4 +43,4 @@ target_link_directories(llhttp PUBLIC
 )
 
 install(TARGETS llhttp DESTINATION lib)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/llhttp.h DESTINATION include)
+#install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/llhttp.h DESTINATION include)

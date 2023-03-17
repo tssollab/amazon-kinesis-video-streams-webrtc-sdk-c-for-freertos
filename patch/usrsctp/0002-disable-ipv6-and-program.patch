@@ -1,7 +1,7 @@
-From 5e37384a649ef46fc2f7c296237986e61ed23703 Mon Sep 17 00:00:00 2001
+From 3ad8476dae77c3b078798d4fa7a1ef55dd55e5f3 Mon Sep 17 00:00:00 2001
 From: ycyang1229 <yc.yang1229@gmail.com>
 Date: Thu, 29 Apr 2021 17:25:17 +0800
-Subject: [PATCH 2/6] disable ipv6 and program.
+Subject: [PATCH 2/7] disable ipv6 and program.
 
 ---
  CMakeLists.txt | 6 +++---

@@ -1,0 +1,49 @@
+From d788563c4bee7fe75ca137a93157250594294961 Mon Sep 17 00:00:00 2001
+From: Lina Chen <chenln1124@thundersoft.com>
+Date: Fri, 17 Mar 2023 07:06:54 +0000
+Subject: [PATCH 2/2] Enable china region.
+
+---
+ src/include/kvs/webrtc_client.h     | 4 +++-
+ src/source/signaling/channel_info.c | 4 ++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+ mode change 100644 => 100755 src/include/kvs/webrtc_client.h
+ mode change 100644 => 100755 src/source/signaling/channel_info.c
+
+diff --git a/src/include/kvs/webrtc_client.h b/src/include/kvs/webrtc_client.h
+old mode 100644
+new mode 100755
+index 50f9d97f1..6e0f78901
+--- a/src/include/kvs/webrtc_client.h
++++ b/src/include/kvs/webrtc_client.h
+@@ -293,7 +293,9 @@ extern "C" {
+ /**
+  * Parameterized string for KVS STUN Server
+  */
+-#define KINESIS_VIDEO_STUN_URL "stun:stun.kinesisvideo.%s.amazonaws.com:443"
++#define KINESIS_VIDEO_STUN_URL_POSTFIX    "amazonaws.com"
++#define KINESIS_VIDEO_STUN_URL_POSTFIX_CN "amazonaws.com.cn"
++#define KINESIS_VIDEO_STUN_URL            "stun:stun.kinesisvideo.%s.%s:443"
+ 
+ /**
+  * Default signaling SSL port
+diff --git a/src/source/signaling/channel_info.c b/src/source/signaling/channel_info.c
+old mode 100644
+new mode 100755
+index feb32e7f7..41a24e379
+--- a/src/source/signaling/channel_info.c
++++ b/src/source/signaling/channel_info.c
+@@ -153,6 +153,10 @@ STATUS channel_info_create(PChannelInfo pOrigChannelInfo, PChannelInfo* ppChanne
+         // Create a fully qualified URI
+         SNPRINTF(pCurPtr, cplLen, "%s%s.%s%s", CONTROL_PLANE_URI_PREFIX, KINESIS_VIDEO_SERVICE_NAME, pChannelInfo->pRegion,
+                  CONTROL_PLANE_URI_POSTFIX);
++        // If region is in CN, add CN region uri postfix
++        if (STRSTR(pChannelInfo->pRegion, "cn-")) {
++            STRCAT(pCurPtr, ".cn");
++        }
+     }
+ 
+     pChannelInfo->pControlPlaneUrl = pCurPtr;
+-- 
+2.17.1
+
