@@ -1,4 +1,4 @@
-From b1d6b3045153e61ed8445dd251d0afe8cd960d7e Mon Sep 17 00:00:00 2001
+From c87c890e6e6aa0ce1a727e6d1806a0d040ae45cf Mon Sep 17 00:00:00 2001
 From: ycyang1229 <yc.yang1229@gmail.com>
 Date: Thu, 29 Apr 2021 17:25:17 +0800
 Subject: [PATCH 2/8] disable ipv6 and program.

@@ -1,4 +1,4 @@
-From c293ee0353fff72fa5c220697697092eca287e08 Mon Sep 17 00:00:00 2001
+From af7959e35c2969d3d3d9285835051588df541941 Mon Sep 17 00:00:00 2001
 From: Lina Chen <chenln1124@thundersoft.com>
 Date: Fri, 17 Mar 2023 05:39:41 +0000
 Subject: [PATCH 7/8] Enable build on anyke platform.

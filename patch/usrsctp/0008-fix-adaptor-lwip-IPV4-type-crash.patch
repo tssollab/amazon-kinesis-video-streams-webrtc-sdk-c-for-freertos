@@ -1,4 +1,4 @@
-From 3cde06a5da3dab320d5d29d58c1817985fed32f7 Mon Sep 17 00:00:00 2001
+From 5553e6a160cb6bf7b18fe099b2c594536c3966f1 Mon Sep 17 00:00:00 2001
 From: Kevin <zhaoyl0704@thundersoft.com>
 Date: Fri, 17 Mar 2023 15:42:48 +0800
 Subject: [PATCH 8/8] fix adaptor lwip IPV4 type crash
@@ -171,7 +171,7 @@ index 4acf743..df9f337
 diff --git a/usrsctplib/netinet/sctp_sha1.h b/usrsctplib/netinet/sctp_sha1.h
 old mode 100755
 new mode 100644
-index 58bfe7d..5741a65
+index 58bfe7d..cb9ff26
 --- a/usrsctplib/netinet/sctp_sha1.h
 +++ b/usrsctplib/netinet/sctp_sha1.h
 @@ -48,7 +48,7 @@ __FBSDID("$FreeBSD$");
@@ -179,7 +179,7 @@ index 58bfe7d..5741a65
  #elif defined(SCTP_USE_MBEDTLS_SHA1)
  #include <mbedtls/sha1.h>
 -#ifdef ENABLE_MBEDTLS_V3
-+#ifdef KVS_PLAT_ANKAI_FREERTOS
++#if defined(KVS_PLAT_ANKAI_FREERTOS) && defined(ENABLE_MBEDTLS_V3)
  #include <mbedtls/compat-2.x.h>
  #endif
  #endif
