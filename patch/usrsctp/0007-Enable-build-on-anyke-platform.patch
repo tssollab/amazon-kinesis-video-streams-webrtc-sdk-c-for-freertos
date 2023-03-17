@@ -1,7 +1,7 @@
-From 819ca187ae4bbcf4ee2d4b03c85dbf6658248cfe Mon Sep 17 00:00:00 2001
+From c293ee0353fff72fa5c220697697092eca287e08 Mon Sep 17 00:00:00 2001
 From: Lina Chen <chenln1124@thundersoft.com>
 Date: Fri, 17 Mar 2023 05:39:41 +0000
-Subject: [PATCH 7/7] Enable build on anyke platform.
+Subject: [PATCH 7/8] Enable build on anyke platform.
 
 ---
  CMakeLists.txt                         |  2 ++

@@ -1,0 +1,370 @@
+From 3cde06a5da3dab320d5d29d58c1817985fed32f7 Mon Sep 17 00:00:00 2001
+From: Kevin <zhaoyl0704@thundersoft.com>
+Date: Fri, 17 Mar 2023 15:42:48 +0800
+Subject: [PATCH 8/8] fix adaptor lwip IPV4 type crash
+
+---
+ usrsctplib/netinet/sctp.h              | 15 ++++++------
+ usrsctplib/netinet/sctp_bsd_addr.c     |  8 ++++--
+ usrsctplib/netinet/sctp_os_userspace.h | 34 +++++++++++++++++++++++---
+ usrsctplib/netinet/sctp_pcb.c          |  2 +-
+ usrsctplib/netinet/sctp_sha1.h         |  2 +-
+ usrsctplib/netinet/sctp_uio.h          |  2 +-
+ usrsctplib/netinet/sctp_userspace.c    | 20 +++++++++++++--
+ usrsctplib/netinet/sctputil.h          |  3 +++
+ usrsctplib/user_atomic.h               |  2 +-
+ usrsctplib/user_malloc.h               | 14 +++++------
+ usrsctplib/user_recv_thread.c          |  6 ++---
+ usrsctplib/user_socketvar.h            |  6 ++---
+ usrsctplib/usrsctp.h                   |  2 +-
+ 13 files changed, 84 insertions(+), 32 deletions(-)
+ mode change 100755 => 100644 usrsctplib/netinet/sctp.h
+ mode change 100755 => 100644 usrsctplib/netinet/sctp_bsd_addr.c
+ mode change 100755 => 100644 usrsctplib/netinet/sctp_os_userspace.h
+ mode change 100755 => 100644 usrsctplib/netinet/sctp_pcb.c
+ mode change 100755 => 100644 usrsctplib/netinet/sctp_sha1.h
+ mode change 100755 => 100644 usrsctplib/netinet/sctp_uio.h
+ mode change 100755 => 100644 usrsctplib/netinet/sctp_userspace.c
+ mode change 100755 => 100644 usrsctplib/netinet/sctputil.h
+ mode change 100755 => 100644 usrsctplib/user_atomic.h
+ mode change 100755 => 100644 usrsctplib/user_malloc.h
+ mode change 100755 => 100644 usrsctplib/user_recv_thread.c
+ mode change 100755 => 100644 usrsctplib/user_socketvar.h
+
+diff --git a/usrsctplib/netinet/sctp.h b/usrsctplib/netinet/sctp.h
+old mode 100755
+new mode 100644
+index b6e81b2..24155bf
+--- a/usrsctplib/netinet/sctp.h
++++ b/usrsctplib/netinet/sctp.h
+@@ -54,13 +54,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp.h 356357 2020-01-04 20:33:12Z tuexen $
+ #define SCTP_PACKED
+ #endif
+ 
+-#if defined(SCTP_USE_RTOS)
+-#define SOCK_SEQPACKET 5
+-#define MSG_EOR        0x08
+-#define SOMAXCONN      128
+-#define ENOTSUP        134
+-#endif
+-
+ /*
+  * SCTP protocol - RFC4960.
+  */
+@@ -676,4 +669,12 @@ struct sctp_error_auth_invalid_hmac {
+ #define SCTP_LOG_AT_SEND_2_OUTQ				0x08000000
+ #define SCTP_LOG_TRY_ADVANCE				0x10000000
+ 
++#if defined(KVS_PLAT_ANKAI_FREERTOS)
++#define SOCK_SEQPACKET  5
++#define MSG_EOR   0x8
++/* Maximum queue length specifiable by listen.  */
++#define SOMAXCONN       128
++#define ENOTSUP         134
++#endif
++
+ #endif				/* !_NETINET_SCTP_H_ */
+diff --git a/usrsctplib/netinet/sctp_bsd_addr.c b/usrsctplib/netinet/sctp_bsd_addr.c
+old mode 100755
+new mode 100644
+index ec900eb..e2cddbc
+--- a/usrsctplib/netinet/sctp_bsd_addr.c
++++ b/usrsctplib/netinet/sctp_bsd_addr.c
+@@ -438,8 +438,12 @@ sctp_init_ifns_for_vrf(int vrfid)
+ 			if(ip_addr_isloopback(&tmp_if->ip_addr)){
+ 				continue;
+ 			}
+-
+-			if(tmp_if->ip_addr.type == IPADDR_TYPE_V4){
++			// TODO anyky lwip ipv4 type bug
++#if defined(KVS_PLAT_ANKAI_FREERTOS)
++			if (true){
++#else
++			if (tmp_if->ip_addr.type == IPADDR_TYPE_V4){
++#endif
+ 				in_addr->sa_family = AF_INET;
+ 				memcpy(&((struct sockaddr_in *)in_addr)->sin_addr, &tmp_if->ip_addr.u_addr, sizeof(uint32_t) );
+ 			}else{
+diff --git a/usrsctplib/netinet/sctp_os_userspace.h b/usrsctplib/netinet/sctp_os_userspace.h
+old mode 100755
+new mode 100644
+index 54ed5f9..8c82249
+--- a/usrsctplib/netinet/sctp_os_userspace.h
++++ b/usrsctplib/netinet/sctp_os_userspace.h
+@@ -41,6 +41,34 @@
+  * We will place them in userspace stack build directory.
+  */
+ 
++#if defined(KVS_PLAT_ANKAI_FREERTOS)
++typedef char* caddr_t;
++
++#define timeradd(tvp, uvp, vvp)   \
++	do {                          \
++	    (vvp)->tv_sec = (tvp)->tv_sec + (uvp)->tv_sec;  \
++		(vvp)->tv_usec = (tvp)->tv_usec + (uvp)->tv_usec;  \
++		if ((vvp)->tv_usec >= 1000000) {                   \
++		    (vvp)->tv_sec++;                        \
++			(vvp)->tv_usec -= 1000000;             \
++		}                         \
++	} while (0)
++
++#define timersub(tvp, uvp, vvp)   \
++	do {                          \
++	    (vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;  \
++		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec;  \
++		if ((vvp)->tv_usec < 0) {                   \
++		    (vvp)->tv_sec--;                        \
++			(vvp)->tv_usec += 1000000;             \
++		}                       \
++	} while (0)
++
++#define	timercmp(tvp, uvp, cmp)						\
++	(((tvp)->tv_sec == (uvp)->tv_sec) ?				\
++	    ((tvp)->tv_usec cmp (uvp)->tv_usec) :			\
++	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
++#endif
+ 
+ #if !defined(SCTP_USE_LWIP)
+ #include <errno.h>
+@@ -288,7 +316,7 @@ typedef char* caddr_t;
+ 
+ #else /* !defined(Userspace_os_Windows) */
+ #include <sys/socket.h>
+-#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__native_client__) || defined(__Fuchsia__) || defined(SCTP_USE_RTOS)
++#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__native_client__) || defined(__Fuchsia__) || defined(KVS_PLAT_ANKAI_FREERTOS)
+ #include <pthread.h>
+ #endif
+ 
+@@ -468,7 +496,7 @@ struct sx {int dummy;};
+ /* #include <net/route.h> */
+ #if !defined(_WIN32) && !defined(__native_client__)
+ #include <net/if.h>
+-#include <netinet/in.h>
++//#include <netinet/in.h>
+ #if !defined(SCTP_USE_LWIP)
+ #include <netinet/in_systm.h>
+ #endif
+@@ -494,7 +522,7 @@ struct sx {int dummy;};
+ #endif
+ 
+ /* for ioctl */
+-#include <sys/ioctl.h>
++//#include <sys/ioctl.h>
+ 
+ /* for close, etc. */
+ #include <unistd.h>
+diff --git a/usrsctplib/netinet/sctp_pcb.c b/usrsctplib/netinet/sctp_pcb.c
+old mode 100755
+new mode 100644
+index 4acf743..df9f337
+--- a/usrsctplib/netinet/sctp_pcb.c
++++ b/usrsctplib/netinet/sctp_pcb.c
+@@ -6740,7 +6740,7 @@ sctp_pcb_init(void)
+ #endif
+ #if defined(__Userspace__)
+ 	mbuf_initialize(NULL);
+-	atomic_init();
++	//atomic_init();
+ #if defined(INET) || defined(INET6)
+ 	if (start_threads)
+ 		recv_thread_init();
+diff --git a/usrsctplib/netinet/sctp_sha1.h b/usrsctplib/netinet/sctp_sha1.h
+old mode 100755
+new mode 100644
+index 58bfe7d..5741a65
+--- a/usrsctplib/netinet/sctp_sha1.h
++++ b/usrsctplib/netinet/sctp_sha1.h
+@@ -48,7 +48,7 @@ __FBSDID("$FreeBSD$");
+ #include <openssl/sha.h>
+ #elif defined(SCTP_USE_MBEDTLS_SHA1)
+ #include <mbedtls/sha1.h>
+-#ifdef ENABLE_MBEDTLS_V3
++#ifdef KVS_PLAT_ANKAI_FREERTOS
+ #include <mbedtls/compat-2.x.h>
+ #endif
+ #endif
+diff --git a/usrsctplib/netinet/sctp_uio.h b/usrsctplib/netinet/sctp_uio.h
+old mode 100755
+new mode 100644
+index 6298f93..220bcfa
+--- a/usrsctplib/netinet/sctp_uio.h
++++ b/usrsctplib/netinet/sctp_uio.h
+@@ -52,7 +52,7 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 362473 2020-06-21 23:12:56Z tuex
+ #endif
+ #include <sys/types.h>
+ #include <sys/socket.h>
+-#include <netinet/in.h>
++//#include <netinet/in.h>
+ #endif
+ #if defined(_WIN32) && !defined(__Userspace__)
+ #pragma warning(push)
+diff --git a/usrsctplib/netinet/sctp_userspace.c b/usrsctplib/netinet/sctp_userspace.c
+old mode 100755
+new mode 100644
+index 8a37787..b6cfc9c
+--- a/usrsctplib/netinet/sctp_userspace.c
++++ b/usrsctplib/netinet/sctp_userspace.c
+@@ -37,9 +37,15 @@
+ #endif
+ #include <user_config.h>
+ 
+-#if defined(SCTP_USE_RTOS)
++#if (defined(SCTP_USE_RTOS) && defined(KVS_PLAT_ANKAI_FREERTOS))
++#include "pthread.h"
++#endif
++
++#if (defined(SCTP_USE_RTOS) && defined(KVS_PLAT_ESP_FREERTOS))
+ #include <netinet/sctp_pcb.h>
++#include "esp_pthread.h"
+ #endif
++
+ #include <netinet/sctp_os_userspace.h>
+ #if defined(__FreeBSD__)
+ #include <pthread_np.h>
+@@ -83,7 +89,17 @@ sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_ro
+ int
+ sctp_userspace_thread_create(userland_thread_t *thread, start_routine_t start_routine, const char* thread_name, uint32_t thread_size)
+ {
+-	return pthread_create(thread, NULL, start_routine, NULL);
++    pthread_attr_t *pAttr = NULL;
++    pthread_attr_t attr;
++    pAttr = &attr;
++    int result = 0;
++    result = pthread_attr_init(pAttr);
++    if(thread_size == 0){
++        pthread_attr_setstacksize(pAttr, SCTP_THREAD_DEFAULT_SIZE);
++    }else{
++        pthread_attr_setstacksize(pAttr, thread_size);
++    }
++    return pthread_create(thread, pAttr, start_routine, NULL);
+ }
+ #endif
+ 
+diff --git a/usrsctplib/netinet/sctputil.h b/usrsctplib/netinet/sctputil.h
+old mode 100755
+new mode 100644
+index 84e8303..e817feb
+--- a/usrsctplib/netinet/sctputil.h
++++ b/usrsctplib/netinet/sctputil.h
+@@ -418,5 +418,8 @@ uint32_t sctp_msecs_to_ticks(uint32_t);
+ uint32_t sctp_ticks_to_secs(uint32_t);
+ uint32_t sctp_secs_to_ticks(uint32_t);
+ 
++#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
++#define DLOG_STEP(fmt, ...) printf("[%s:%s:%d]-----step:"fmt"\n", __FILENAME__ , __func__, __LINE__, ##__VA_ARGS__)
++
+ #endif				/* _KERNEL */
+ #endif
+diff --git a/usrsctplib/user_atomic.h b/usrsctplib/user_atomic.h
+old mode 100755
+new mode 100644
+index ac5ada8..5229fd0
+--- a/usrsctplib/user_atomic.h
++++ b/usrsctplib/user_atomic.h
+@@ -148,7 +148,7 @@ static inline void atomic_init(void) {} /* empty when we are not using atomic_mt
+ 	} \
+ }
+ #endif
+-static inline void atomic_init(void) {} /* empty when we are not using atomic_mtx */
++//static inline void atomic_init(void) {} /* empty when we are not using atomic_mtx */
+ #endif
+ 
+ #if 0 /* using libatomic_ops */
+diff --git a/usrsctplib/user_malloc.h b/usrsctplib/user_malloc.h
+old mode 100755
+new mode 100644
+index 830be36..9bb61f0
+--- a/usrsctplib/user_malloc.h
++++ b/usrsctplib/user_malloc.h
+@@ -54,13 +54,6 @@
+ 
+ #define	MINALLOCSIZE	UMA_SMALLEST_UNIT
+ 
+-#ifdef SCTP_USE_RTOS
+-typedef unsigned char   u_char;
+-typedef unsigned short  u_short;
+-typedef unsigned int    u_int;
+-typedef unsigned long   u_long;
+-#endif
+-
+ /*
+  * flags to malloc.
+  */
+@@ -72,6 +65,13 @@ typedef unsigned long   u_long;
+ 
+ #define	M_MAGIC		877983977	/* time when first defined :-) */
+ 
++#if defined(KVS_PLAT_ANKAI_FREERTOS)
++#define u_char                   uint8_t
++#define u_short                  uint16_t
++#define u_int                    uint32_t
++#define u_long                   uint32_t
++#endif
++
+ /*
+  * Two malloc type structures are present: malloc_type, which is used by a
+  * type owner to declare the type, and malloc_type_internal, which holds
+diff --git a/usrsctplib/user_recv_thread.c b/usrsctplib/user_recv_thread.c
+old mode 100755
+new mode 100644
+index 02ff058..4c8d4c9
+--- a/usrsctplib/user_recv_thread.c
++++ b/usrsctplib/user_recv_thread.c
+@@ -32,11 +32,11 @@
+ #include <sys/types.h>
+ #if !defined(_WIN32)
+ #include <sys/socket.h>
+-#include <netinet/in.h>
++//#include <netinet/in.h>
+ #include <unistd.h>
+ #include <pthread.h>
+-#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(SCTP_USE_RTOS)
+-#include <sys/uio.h>
++#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
++//#include <sys/uio.h>
+ #else
+ #include <user_ip6_var.h>
+ #endif
+diff --git a/usrsctplib/user_socketvar.h b/usrsctplib/user_socketvar.h
+old mode 100755
+new mode 100644
+index 96bccbf..239acc6
+--- a/usrsctplib/user_socketvar.h
++++ b/usrsctplib/user_socketvar.h
+@@ -42,7 +42,7 @@
+ /* #include <sys/_lock.h>  was 0 byte file */
+ /* #include <sys/_mutex.h> was 0 byte file */
+ /* #include <sys/_sx.h> */ /*__Userspace__ alternative?*/
+-#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(_WIN32) && !defined(__native_client__) && !defined(SCTP_USE_RTOS)
++#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && !defined(_WIN32) && !defined(__native_client__) && !defined(KVS_PLAT_ANKAI_FREERTOS)
+ #include <sys/uio.h>
+ #endif
+ #define SOCK_MAXADDRLEN 255
+@@ -54,9 +54,9 @@
+ #define SS_CANTRCVMORE 0x020
+ #define SS_CANTSENDMORE 0x010
+ 
+-#if defined(__APPLE__) || defined(__DragonFly__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_WIN32) || defined(__native_client__)
++#if defined(__APPLE__) || defined(__DragonFly__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_WIN32) || defined(__native_client__) || defined(KVS_PLAT_ANKAI_FREERTOS)
+ #define UIO_MAXIOV 1024
+-#define ERESTART (-1)
++//#define ERESTART (-1)
+ #endif
+ 
+ #if !defined(__APPLE__) && !defined(__NetBSD__) && !defined(__OpenBSD__)
+diff --git a/usrsctplib/usrsctp.h b/usrsctplib/usrsctp.h
+index 0e3012f..23131b7 100644
+--- a/usrsctplib/usrsctp.h
++++ b/usrsctplib/usrsctp.h
+@@ -48,7 +48,7 @@ extern "C" {
+ #include <ws2tcpip.h>
+ #else
+ #include <sys/socket.h>
+-#include <netinet/in.h>
++//#include <netinet/in.h>
+ #endif
+ 
+ #ifndef MSG_NOTIFICATION
+-- 
+2.17.1
+

@@ -1,7 +1,7 @@
-From 2bc563105ba994e0c61b2861e58685baecb829d0 Mon Sep 17 00:00:00 2001
+From 8b5f0c258d17a0687f35b75e34afe6046f553fec Mon Sep 17 00:00:00 2001
 From: ycyang1229 <yc.yang1229@gmail.com>
 Date: Tue, 26 Apr 2022 14:34:29 +0800
-Subject: [PATCH 6/7] add pthread_exit.
+Subject: [PATCH 6/8] add pthread_exit.
 
 ---
  usrsctplib/netinet/sctp_bsd_addr.c | 1 +
