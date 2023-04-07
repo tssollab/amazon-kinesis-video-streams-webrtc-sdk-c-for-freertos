@@ -1,6 +1,11 @@
 option(ENABLE_STREAMING "enable the streaming" ON)
-option(ENABLE_DATA_CHANNEL "enable the data channel" OFF)
-option(ENABLE_MBEDTLS_V3 "enable mbedtls version 3.2.1" OFF)
+option(ENABLE_DATA_CHANNEL "enable the data channel" ON)
+# option mbedtls only one version
+option(ENABLE_MBEDTLS_V2_25_0 "enable mbedtls version 2.25.0" OFF)
+option(ENABLE_MBEDTLS_V2_28_2 "enable mbedtls version 2.28.2" ON)
+option(ENABLE_MBEDTLS_V3_2_1  "enable mbedtls version 3.2.1"  OFF)
+# end option mbedtls
+
 option(ENABLE_HEADER_CONFIG_CLIENT_INFO "enable config app client info with config header" ON)
 
 if (ENABLE_HEADER_CONFIG_CLIENT_INFO)
@@ -86,7 +91,7 @@ add_definitions(-DFAST_LAUNCH)
 add_definitions(-DISP_QUICK_START_ENABLE)
 add_definitions(-D__CHIP_AK3918AV100_SERIES)
 add_definitions(-DMACH_AK3918AV100)
-
+add_definitions(-DMBEDTLS_CONFIG_FILE="mbedtls/anyke_config.h")
 
 
 if (ENABLE_STREAMING)
@@ -128,12 +133,26 @@ target_link_libraries(${COMPONENT_LIB} PUBLIC wslay)
 set(KVS_LIBWSLAY_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/wslay/lib/includes" "${LIB_SOURCE_DIR}/wslay/lib/includes")
 
 message("############################## start mbedtls ##############################")
-if(ENABLE_MBEDTLS_V3)
-    set(MBEDTLS_VERSION "3.2.1")
-    add_definitions(-DENABLE_MBEDTLS_V3)
+if(ENABLE_MBEDTLS_V2_25_0)
+    set(MBEDTLS_VERSION "v2.25.0")
+    add_definitions(-DENABLE_MBEDTLS_V2_25_0)
+endif()
+
+if(ENABLE_MBEDTLS_V2_28_2)
+    set(MBEDTLS_VERSION "v2.28.2")
+    add_definitions(-DENABLE_MBEDTLS_V2_28_2)
+endif()
+
+if(ENABLE_MBEDTLS_V3_2_1)
+    set(MBEDTLS_VERSION "v3.2.1")
+    add_definitions(-DENABLE_MBEDTLS_V3_2_1)
+endif()
+
+string(SUBSTRING ${MBEDTLS_VERSION} 0 2 MBEDTLS_VERSION_MAJOR)
+if(${MBEDTLS_VERSION_MAJOR} STREQUAL "v2")
+    add_definitions(-DENABLE_MBEDTLS_V2)
 else()
-    set(MBEDTLS_VERSION "2.16.6")
-    add_definitions(-DENABLE_MBEDTLS_V2_16_6)
+    add_definitions(-DENABLE_MBEDTLS_V3)
 endif()
 add_subdirectory(lib/mbedtls)
 set_property(TARGET mbedtls APPEND PROPERTY LINK_LIBRARIES
@@ -143,7 +162,9 @@ set_property(TARGET mbedtls APPEND PROPERTY INTERFACE_LINK_LIBRARIES
         ${nvs_flash_lib}
         ${mbedtls_lib})
 target_link_libraries(${COMPONENT_LIB} PUBLIC mbedtls)
-set(KVS_LIBMBEDTLS_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/mbedtls/lib/includes" "${LIB_SOURCE_DIR}/mbedtls/include")
+set(KVS_LIBMBEDTLS_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/main/lib/mbedtls/vendor/anyke/mbedtls/lib/includes"
+                                "${LIB_SOURCE_DIR}/mbedtls/vendor/anyke/mbedtls/include"
+                                "${LIB_SOURCE_DIR}/mbedtls/vendor/anyke/port/include")
 set(MBEDTLS_INCLUDE_DIRS "${KVS_LIBMBEDTLS_INCLUDE_DIRS}")
 
 if(ENABLE_STREAMING)
